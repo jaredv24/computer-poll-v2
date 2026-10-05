@@ -147,6 +147,15 @@ ul.tight { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
 .checks li::before { content: ""; width: 16px; height: 16px; border: 2px solid var(--pylon); border-radius: 3px; margin-top: 5px; }
 footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92rem; color: var(--muted); display: grid; gap: 8px; }
 
+/* Share */
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.share label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.95rem; color: var(--muted); cursor: pointer; }
+.share input { width: 18px; height: 18px; accent-color: var(--turf); }
+.btn { font: 700 1rem/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--bg); background: var(--turf); border: 0; border-radius: 4px; padding: 12px 16px; min-height: 42px; cursor: pointer; }
+.btn:hover { filter: brightness(1.1); }
+.copy-status { font-size: 0.92rem; color: var(--turf); }
+.copy-text { width: 100%; font: 400 0.88rem/1.5 var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 10px; resize: vertical; }
+
 /* Combined Computer Poll + AP list */
 .cl { list-style: none; margin: 0; padding: 0; display: grid; }
 .cl li { display: grid; grid-template-columns: 40px minmax(0, 1fr) 48px 56px minmax(120px, 200px) 64px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 0.97rem; }
@@ -253,6 +262,14 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
   <div class="panel">
     <h2 id="ap-h">Computer Poll vs AP Top 25</h2>
     <div class="kpis" id="kpis"></div>
+    <div class="share">
+      <button type="button" class="btn" id="copy-btn">Copy Top 25</button>
+      <label><input type="checkbox" id="opt-rec" checked> Record</label>
+      <label><input type="checkbox" id="opt-move" checked> Movement</label>
+      <label><input type="checkbox" id="opt-ap" checked> AP rank</label>
+      <span class="copy-status" id="copy-status" role="status" aria-live="polite"></span>
+    </div>
+    <textarea id="copy-text" class="copy-text" rows="10" readonly hidden aria-label="Top 25 as text"></textarea>
     <p class="small muted" id="ap-title"></p>
     <div class="cl-legend small" aria-hidden="true"><span><i class="sw ap"></i>AP ranks them higher</span><span><i class="sw cp"></i>Computer Poll ranks them higher</span></div>
     <ol class="cl" id="combined"></ol>
@@ -464,6 +481,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     $("week-mark").textContent = "WEEK " + wk;
     renderVs();
     renderRows();
+    if (!$("copy-text").hidden) $("copy-text").value = top25Text();
   }
 
   function renderVs() {
@@ -733,6 +751,42 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
   });
   $("team-dlg").addEventListener("click", e => { if (e.target === $("team-dlg")) $("team-dlg").close(); });
   $("team-dlg").addEventListener("close", () => history.replaceState(null, "", location.pathname + (cur ? "#week" + cur.week : "")));
+
+  // ---------------- copy Top 25 as text (Slack-friendly)
+  function top25Text() {
+    const rec = $("opt-rec").checked, mv = $("opt-move").checked, ap = $("opt-ap").checked && DATA.apAvailable;
+    const lines = [`*The Computer Poll · Week ${cur.week}, ${DATA.season}*`];
+    cur.teams.slice(0, 25).forEach(t => {
+      let line = `${t.rank}. ${t.team}`;
+      if (rec) line += ` (${t.w}-${t.l})`;
+      if (mv) {
+        const m = t.prev == null ? null : t.prev - t.rank;
+        line += m == null ? "" : m > 0 ? ` ▲${m}` : m < 0 ? ` ▼${-m}` : " =";
+      }
+      if (ap) line += ` · AP ${t.ap ? "#" + t.ap : "NR"}`;
+      lines.push(line);
+    });
+    const dropped = cur.week > DATA.weeks[0].week
+      ? DATA.weeks.find(w => w.week === cur.week - 1)?.teams.slice(0, 25).filter(p => (cur.teams.find(x => x.team === p.team)?.rank ?? 999) > 25).map(p => p.team) : [];
+    if (mv && dropped && dropped.length) lines.push(`_Dropped out: ${dropped.join(", ")}_`);
+    if (location.protocol.startsWith("http")) lines.push(`_Full rankings: ${location.origin}${location.pathname}#week${cur.week}_`);
+    return lines.join("\n");
+  }
+  $("copy-btn").addEventListener("click", async () => {
+    const text = top25Text(), box = $("copy-text"), st = $("copy-status");
+    try {
+      await navigator.clipboard.writeText(text);
+      box.hidden = true;
+      st.textContent = `Copied week ${cur.week}. Paste it into Slack.`;
+    } catch (e) {
+      box.value = text; box.hidden = false; box.focus(); box.select();
+      st.textContent = "Your browser blocked copying. The text is selected below; press Ctrl+C or ⌘C.";
+    }
+    clearTimeout(window._cpT); window._cpT = setTimeout(() => { st.textContent = ""; }, 5000);
+  });
+  ["opt-rec", "opt-move", "opt-ap"].forEach(id => $(id).addEventListener("change", () => {
+    if (!$("copy-text").hidden) $("copy-text").value = top25Text();
+  }));
   load();
 })();
 </script>
