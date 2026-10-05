@@ -21,6 +21,9 @@ from scipy.optimize import minimize
 from scipy.special import expit, log_expit
 from scipy.stats import norm, spearmanr
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import projections  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, "pipeline", ".cache")
 FCS = "FCS"
@@ -388,8 +391,18 @@ def build(season):
     path = os.path.join(ROOT, "data", f"poll-{season}.json")
     with open(path, "w") as f:
         json.dump(out, f, separators=(",", ":"))
+    # Projections for next week's games, plus how the model has done so far
+    g_last, teams_last, _ = load_season(season - 1)
+    upcoming = projections.load_upcoming(os.path.join(CACHE, f"s{season}.csv"), set(teams))
+    rank = {x["team"]: x["rank"] for x in weeks_out[-1]["teams"]} if weeks_out else {}
+    proj = projections.build_projections(g, teams, g_last, teams_last, upcoming, rank)
+    proj["updated"] = out["updated"]
+    with open(os.path.join(ROOT, "data", f"projections-{season}.json"), "w") as f:
+        json.dump(proj, f, separators=(",", ":"))
+    print(f"projections: week {proj['nextWeek']}, {len(proj['games'])} games")
     with open(os.path.join(ROOT, "data", "latest.json"), "w") as f:
-        json.dump(dict(season=season, file=f"poll-{season}.json", updated=out["updated"]), f)
+        json.dump(dict(season=season, file=f"poll-{season}.json", projections=f"projections-{season}.json",
+                       updated=out["updated"]), f)
     print(f"wrote {path}")
 
 

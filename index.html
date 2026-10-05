@@ -147,6 +147,41 @@ ul.tight { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
 .checks li::before { content: ""; width: 16px; height: 16px; border: 2px solid var(--pylon); border-radius: 3px; margin-top: 5px; }
 footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92rem; color: var(--muted); display: grid; gap: 8px; }
 
+
+/* Projections */
+.weeks button[id^="pf-"] { padding-inline: 14px; font-size: 0.95rem; }
+.proj { list-style: none; margin: 0; padding: 0; display: grid; }
+.pg { display: grid; grid-template-columns: 74px minmax(0, 1fr) 150px 120px; gap: 6px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.pg .when { font: 600 0.78rem/1.25 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.pg .teams { display: grid; gap: 4px; min-width: 0; }
+.pg .side { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.pg .side .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.pg .side .nm .rk { font: 600 0.78rem/1 var(--mono); color: var(--muted); margin-right: 5px; }
+.pg .side .nm .at { color: var(--muted); font-weight: 400; margin-right: 4px; }
+.pg .side .sc { font: 600 1.05rem/1 var(--mono); }
+.pg .side.fav .sc { color: var(--turf); }
+.pg .side.lost .nm, .pg .side.lost .sc { color: var(--muted); font-weight: 400; }
+.pg .wp { display: grid; gap: 4px; }
+.pg .wp .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--rule); }
+.pg .wp .bar i { display: block; height: 100%; }
+.pg .wp .bar i.a { background: var(--seg3); } .pg .wp .bar i.h { background: var(--turf); }
+.pg .wp .lab { display: flex; justify-content: space-between; gap: 8px; font: 400 0.78rem/1.2 var(--mono); color: var(--muted); }
+.pg .wp .lab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg .line { font: 700 1.05rem/1.1 var(--display); letter-spacing: 0.02em; text-align: right; }
+.pg .line small { display: block; font: 400 0.78rem/1.3 var(--body); color: var(--muted); letter-spacing: 0; }
+.pg .mark { font: 700 0.85rem/1 var(--mono); }
+.pg .mark.ok { color: var(--up); } .pg .mark.no { color: var(--down); }
+.lastwk summary { cursor: pointer; font: 600 1.05rem/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; padding: 8px 0; }
+.lastwk summary:focus-visible { outline: 2px solid var(--pylon); }
+.nextgame { border: 1px solid var(--rule); border-left: 3px solid var(--turf); background: var(--panel); border-radius: 4px; padding: 12px 14px; display: grid; gap: 4px; }
+.nextgame b { font-family: var(--display); font-size: 1.15rem; letter-spacing: 0.02em; }
+@media (max-width: 700px) {
+  .pg { grid-template-columns: minmax(0, 1fr) 112px; gap: 8px 12px; }
+  .pg .line { font-size: 0.95rem; }
+  .pg .when { grid-column: 1 / -1; }
+  .pg .wp { grid-column: 1 / -1; grid-row: 3; }
+}
+
 /* Share */
 .share { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
 .share label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.95rem; color: var(--muted); cursor: pointer; }
@@ -317,6 +352,27 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
   </div>
 </section>
 
+<section aria-labelledby="proj-h" id="proj-sec" hidden>
+  <div class="yard"><span class="mark">NEXT WEEK</span><span class="line"></span></div>
+  <div class="col stack">
+    <h2 id="proj-h">Week <span id="proj-wk"></span> Projections</h2>
+    <p class="muted">Projected scores, point spreads and win chances for every FBS game, from a points model built for prediction. It's separate from the poll, which ranks résumés. Home field is worth about <span id="proj-hfa"></span> points.</p>
+  </div>
+  <div class="kpis" id="proj-kpis"></div>
+  <div class="controls">
+    <div class="weeks" role="group" aria-label="Which games">
+      <button type="button" id="pf-top" aria-pressed="true">Top 25 games</button>
+      <button type="button" id="pf-all" aria-pressed="false">All games</button>
+    </div>
+  </div>
+  <ol class="proj" id="proj-list"></ol>
+  <details class="lastwk" id="lastwk">
+    <summary>How the model did in week <span id="lw-wk"></span></summary>
+    <ol class="proj" id="lw-list"></ol>
+  </details>
+  <p class="small muted col">Not a betting tool. In a 2022–2025 backtest of 3,617 games, each predicted only from games already played, the spreads missed the final margin by 13.0 points on average (closing betting lines: 12.1) and picked 74% of winners (lines: 75.5%). Against the spread the model went 50.1%, so it has no edge on the market.</p>
+</section>
+
 <section aria-labelledby="full-h">
   <div class="yard"><span class="mark">ALL FBS</span><span class="line"></span></div>
   <h2 id="full-h">Full Rankings</h2>
@@ -481,8 +537,9 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
   try { const s = localStorage.getItem("cp-sort"); if (s) [sortKey, sortDir] = JSON.parse(s); } catch (e) {}
 
   async function load() {
+    let latest;
     try {
-      const latest = await (await fetch("data/latest.json", { cache: "no-cache" })).json();
+      latest = await (await fetch("data/latest.json", { cache: "no-cache" })).json();
       DATA = await (await fetch("data/" + latest.file, { cache: "no-cache" })).json();
     } catch (e) {
       $("updated").textContent = "Data unavailable";
@@ -505,6 +562,9 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     if (h && DATA.weeks.some(w => w.week === +h[1])) start = +h[1];
     show(start);
     drawTrend();
+    if (latest.projections) {
+      try { PROJ = await (await fetch("data/" + latest.projections, { cache: "no-cache" })).json(); renderProj(); } catch (e) {}
+    }
     const th = decodeURIComponent(location.hash.slice(1));
     if (th && !/^week\d+$/.test(th) && cur.teams.some(t => t.team === th)) openTeam(th);
   }
@@ -686,6 +746,81 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
       </div>`;
   }
 
+
+  // ---------------- projections
+  let PROJ = null, projFilter = "top";
+  const fmtDay = d => { if (!d) return ""; const x = new Date(d); return isNaN(x) ? "" : x.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); };
+  const lineText = g => {
+    const s = Math.abs(g.spread);
+    if (s === 0) return "Pick'em";
+    return `${g.spread > 0 ? g.home : g.away} −${s % 1 ? s.toFixed(1) : s}`;
+  };
+  const tnm = (name, fcs) => fcs ? esc(name) : `<button type="button" class="tlink" data-team="${esc(name)}">${esc(name)}</button>`;
+  function gameItem(g, done) {
+    const hp = Math.round(g.homeWin * 100), ap = 100 - hp;
+    const homeFav = g.spread > 0 || (g.spread === 0 && hp >= 50);
+    const rk = r => r && r <= 25 ? `<span class="rk">#${r}</span>` : "";
+    const aWon = done && g.aFinal > g.hFinal, hWon = done && g.hFinal > g.aFinal;
+    const side = (nm, fcs, r, proj, fin, fav, won, lost, at) => `
+      <div class="side ${fav && !done ? "fav" : ""} ${lost ? "lost" : ""}"><span class="nm">${at ? `<span class="at">${at}</span>` : ""}${rk(r)}${tnm(nm, fcs)}</span>
+      <span class="sc">${done ? fin : proj}</span></div>`;
+    const right = done
+      ? `<div class="line"><span class="mark ${g.correct ? "ok" : g.correct === false ? "no" : ""}">${g.correct ? "✓ Right" : g.correct === false ? "✗ Wrong" : "–"}</span><small>Projected ${g.aScore}-${g.hScore} · ${lineText(g)} · off by ${g.miss}</small></div>`
+      : `<div class="line">${lineText(g)}<small>Projected ${Math.max(g.hScore, g.aScore)}-${Math.min(g.hScore, g.aScore)}</small></div>`;
+    return `<li class="pg">
+      <div class="when">${done ? "Final" : fmtDay(g.date)}${g.neutral ? "<br>Neutral" : ""}</div>
+      <div class="teams">
+        ${side(g.away, g.awayFCS, g.aRank, g.aScore, g.aFinal, !homeFav, aWon, hWon, "")}
+        ${side(g.home, g.homeFCS, g.hRank, g.hScore, g.hFinal, homeFav, hWon, aWon, g.neutral ? "vs" : "at")}
+      </div>
+      ${done ? "" : `<div class="wp" title="Win chance"><div class="bar"><i class="a" style="width:${ap}%"></i><i class="h" style="width:${hp}%"></i></div>
+        <div class="lab"><span>${esc(g.away)} ${ap}%</span><span>${hp}% ${esc(g.home)}</span></div></div>`}
+      ${right}
+    </li>`;
+  }
+  function renderProj() {
+    if (!PROJ || !PROJ.games.length) return;
+    $("proj-sec").hidden = false;
+    $("proj-wk").textContent = PROJ.nextPost ? "Bowl" : PROJ.nextWeek;
+    $("proj-hfa").textContent = PROJ.hfa;
+    const isTop = g => (g.hRank && g.hRank <= 25) || (g.aRank && g.aRank <= 25);
+    let list = PROJ.games;
+    if (projFilter === "top") list = list.filter(isTop).sort((a, b) => Math.min(a.hRank || 999, a.aRank || 999) - Math.min(b.hRank || 999, b.aRank || 999));
+    $("proj-list").innerHTML = list.map(g => gameItem(g, false)).join("") || `<li class="pg"><span class="muted">No games for this filter.</span></li>`;
+    $("pf-top").setAttribute("aria-pressed", String(projFilter === "top"));
+    $("pf-all").setAttribute("aria-pressed", String(projFilter === "all"));
+    const rec = PROJ.record.filter(r => !r.post);
+    const right = rec.reduce((a, r) => a + r.right, 0), n = rec.reduce((a, r) => a + r.n, 0);
+    const last = PROJ.record.at(-1);
+    const allG = PROJ.record.flatMap(r => r.games);
+    const mae = allG.length ? (allG.reduce((a, g) => a + g.miss, 0) / allG.length).toFixed(1) : "–";
+    $("proj-kpis").innerHTML = `
+      <div class="kpi"><b>${right}-${n - right}</b><span>Model picking winners this season (${n ? Math.round(right / n * 100) : 0}%)</span></div>
+      ${last ? `<div class="kpi"><b>${last.right}-${last.n - last.right}</b><span>Last week (week ${last.week})</span></div>` : ""}
+      <div class="kpi"><b>${mae} pts</b><span>Average miss on the final margin this season</span></div>`;
+    if (last) {
+      $("lw-wk").textContent = last.week;
+      const rankNow = Object.fromEntries(DATA.weeks.at(-1).teams.map(t => [t.team, t.rank]));
+      const lg = last.games.map(g => ({ ...g, hRank: g.homeFCS ? null : rankNow[g.home], aRank: g.awayFCS ? null : rankNow[g.away] }))
+        .sort((a, b) => Math.min(a.hRank || 999, a.aRank || 999) - Math.min(b.hRank || 999, b.aRank || 999));
+      $("lw-list").innerHTML = lg.map(g => gameItem(g, true)).join("");
+    } else $("lastwk").hidden = true;
+  }
+  $("pf-top").addEventListener("click", () => { projFilter = "top"; renderProj(); });
+  $("pf-all").addEventListener("click", () => { projFilter = "all"; renderProj(); });
+  function nextGameFor(name) {
+    if (!PROJ) return "";
+    const g = PROJ.games.find(x => (x.home === name && !x.homeFCS) || (x.away === name && !x.awayFCS));
+    if (!g) return "";
+    const isHome = g.home === name, opp = isHome ? g.away : g.away === name ? g.home : "";
+    const my = isHome ? g.hScore : g.aScore, their = isHome ? g.aScore : g.hScore;
+    const p = Math.round((isHome ? g.homeWin : 1 - g.homeWin) * 100);
+    const where = g.neutral ? "vs" : isHome ? "vs" : "at";
+    return `<div class="nextgame"><span class="eyebrow">Next game · ${fmtDay(g.date)}${g.neutral ? " · neutral site" : ""}</span>
+      <b>${where} ${esc(opp)}</b>
+      <span>Projected ${esc(name)} ${my}, ${esc(opp)} ${their} · ${lineText(g)} · <b style="font-size:1rem">${p}%</b> to win</span></div>`;
+  }
+
   async function openTeam(name) {
     const t = cur.teams.find(x => x.team === name);
     if (!t) return;
@@ -755,6 +890,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
         <button type="button" class="tp-close" id="tp-close">Close</button>
         <div class="tp-meta">${esc(t.conf)} · ${t.w}-${t.l} · Score ${t.score.toFixed(1)}${t.ap ? ` · AP #${t.ap}` : DATA.apAvailable ? " · Unranked in AP" : ""} · Week ${cur.week}</div>
       </div>
+      ${nextGameFor(name)}
       ${rankChart(name)}
       <div class="stack">
         <div><h3>Why ${ord(t.rank)}</h3><p class="sub">Every team starts at 50, the FBS average. Each part of the résumé adds or subtracts points.</p></div>
