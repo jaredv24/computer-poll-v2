@@ -17,6 +17,17 @@ Draft v2.0 methodology for The Computer Poll, with a working prototype and a 201
 
 ## Deploying on Vercel
 
-1. On vercel.com: **Add New… > Project**, import this repository.
-2. Framework Preset: **Other**. Leave the build command and output directory empty.
-3. **Deploy**. Every push to `main` redeploys automatically.
+Vercel rebuilds the poll data on every deploy (`build.sh` runs `pipeline/build_poll.py`,
+then assembles the site in `public/`). If the refresh fails, the deploy uses the data
+committed in `data/`.
+
+Project settings:
+
+1. **Environment Variables**: `CFBD_API_KEY` (CollegeFootballData key), `DEPLOY_HOOK_URL`
+   (from step 2), and `CRON_SECRET` (any long random string).
+2. **Git > Deploy Hooks**: create a hook for branch `main` and copy its URL into `DEPLOY_HOOK_URL`.
+3. Redeploy once so the build picks up the variables.
+
+`vercel.json` schedules `/api/rebuild` every Sunday 20:15 UTC and Monday 12:15 UTC; it calls
+the deploy hook, which rebuilds the data. The GitHub Action in `.github/workflows` is a manual
+backup that commits fresh data to the repo.

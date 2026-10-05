@@ -1,5 +1,13 @@
 {
+  "buildCommand": "bash build.sh",
+  "outputDirectory": "public",
+  "installCommand": "echo skip",
+  "crons": [
+    { "path": "/api/rebuild", "schedule": "15 20 * * 0" },
+    { "path": "/api/rebuild", "schedule": "15 12 * * 1" }
+  ],
   "headers": [
-    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/data/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }] }
   ]
 }

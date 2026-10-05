@@ -1,9 +1,6 @@
-name: Update poll
+name: Update poll (manual backup; Vercel rebuilds the data on deploy)
 
 on:
-  schedule:
-    - cron: "15 20 * * 0"   # Sunday 20:15 UTC, after the AP poll is released
-    - cron: "15 12 * * 1"   # Monday 12:15 UTC, picks up late stat corrections
   workflow_dispatch:
     inputs:
       season:
