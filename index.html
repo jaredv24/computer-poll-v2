@@ -148,10 +148,21 @@ ul.tight { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
 footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92rem; color: var(--muted); display: grid; gap: 8px; }
 
 
+/* Logos */
+.lg { display: inline-flex; flex: none; vertical-align: middle; margin-right: 8px; }
+.lg img { width: 100%; height: auto; display: block; object-fit: contain; }
+picture.lg { width: 20px; height: 20px; }
+.tp-name picture.lg { width: 34px; height: 34px; margin-right: 10px; vertical-align: -4px; }
+.glog picture.lg { width: 18px; height: 18px; }
+.lg-none { display: inline-block; }
+.tw { display: inline-flex; align-items: center; }
+.cl .t { display: flex; align-items: center; }
+.cl .t .tlink { overflow: hidden; text-overflow: ellipsis; }
+
 /* Projections */
 .weeks button[id^="pf-"] { padding-inline: 14px; font-size: 0.95rem; }
 .proj { list-style: none; margin: 0; padding: 0; display: grid; }
-.pg { display: grid; grid-template-columns: 74px minmax(0, 1fr) 150px 120px; gap: 6px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.pg { display: grid; grid-template-columns: 74px minmax(0, 1fr) 200px 130px; gap: 6px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
 .pg .when { font: 600 0.78rem/1.25 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .pg .teams { display: grid; gap: 4px; min-width: 0; }
 .pg .side { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
@@ -161,12 +172,14 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
 .pg .side .sc { font: 600 1.05rem/1 var(--mono); }
 .pg .side.fav .sc { color: var(--turf); }
 .pg .side.lost .nm, .pg .side.lost .sc { color: var(--muted); font-weight: 400; }
-.pg .wp { display: grid; gap: 4px; }
+.pg .wp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; width: 200px; min-width: 0; }
+.pg .wp .bar, .pg .wp .lab { width: 100%; }
+.pg .line { min-width: 0; }
 .pg .wp .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--rule); }
 .pg .wp .bar i { display: block; height: 100%; }
-.pg .wp .bar i.a { background: var(--seg3); } .pg .wp .bar i.h { background: var(--turf); }
 .pg .wp .lab { display: flex; justify-content: space-between; gap: 8px; font: 400 0.78rem/1.2 var(--mono); color: var(--muted); }
-.pg .wp .lab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg .wp .lab span { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg .wp .lab span + span { text-align: right; }
 .pg .line { font: 700 1.05rem/1.1 var(--display); letter-spacing: 0.02em; text-align: right; }
 .pg .line small { display: block; font: 400 0.78rem/1.3 var(--body); color: var(--muted); letter-spacing: 0; }
 .pg .mark { font: 700 0.85rem/1 var(--mono); }
@@ -175,11 +188,11 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
 .lastwk summary:focus-visible { outline: 2px solid var(--pylon); }
 .nextgame { border: 1px solid var(--rule); border-left: 3px solid var(--turf); background: var(--panel); border-radius: 4px; padding: 12px 14px; display: grid; gap: 4px; }
 .nextgame b { font-family: var(--display); font-size: 1.15rem; letter-spacing: 0.02em; }
-@media (max-width: 700px) {
-  .pg { grid-template-columns: minmax(0, 1fr) 112px; gap: 8px 12px; }
+@media (max-width: 820px) {
+  .pg { grid-template-columns: minmax(0, 1fr) 130px; gap: 8px 12px; }
   .pg .line { font-size: 0.95rem; }
   .pg .when { grid-column: 1 / -1; }
-  .pg .wp { grid-column: 1 / -1; grid-row: 3; }
+  .pg .wp { grid-column: 1 / -1; grid-row: 3; width: 100%; }
 }
 
 /* Share */
@@ -533,7 +546,30 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const fmt = (v, d = 3, signed = false) => v == null ? "–" : (signed && v > 0 ? "+" : "") + v.toFixed(d).replace(/^(-?)0\./, "$1.");
   const pctf = v => v == null ? "–" : (v * 100).toFixed(1) + "%";
-  let DATA = null, cur = null, sortKey = "rank", sortDir = 1;
+  let DATA = null, cur = null, sortKey = "rank", sortDir = 1, TEAMS = {};
+  // team logo, light and dark variants served from logos/
+  function logo(name, size = 20) {
+    const t = TEAMS[name];
+    if (!t || !t.logo) return `<span class="lg lg-none" style="width:${size}px;height:${size}px" aria-hidden="true"></span>`;
+    const dark = t.logoDark ? `<source srcset="logos/dark/${t.id}.png" media="(prefers-color-scheme: dark)">` : "";
+    return `<picture class="lg" aria-hidden="true">${dark}<img src="logos/${t.id}.png" width="${size}" height="${size}" alt="" loading="lazy" onerror="this.parentNode.style.visibility='hidden'"></picture>`;
+  }
+  // pick two bar colors that differ from each other and from the page background
+  const hex2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const cdist = (a, b) => { const x = hex2rgb(a), y = hex2rgb(b); return Math.hypot((x[0] - y[0]) * 0.3, (x[1] - y[1]) * 0.59, (x[2] - y[2]) * 0.11) * 1.8; };
+  function pageBg() {
+    const m = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
+    return m ? "#" + m.slice(0, 3).map(v => (+v).toString(16).padStart(2, "0")).join("") : "#ffffff";
+  }
+  function barColors(home, away) {
+    const bg = pageBg(), fallback = ["var(--turf)", "var(--seg3)"];
+    const opts = n => { const t = TEAMS[n]; return t ? [t.color, t.alt].filter(Boolean).filter(c => cdist(c, bg) > 55) : []; };
+    const H = opts(home), A = opts(away);
+    for (const h of H) for (const a of A) if (cdist(h, a) > 60) return [h, a];
+    if (H.length) return [H[0], cdist(H[0], "#8a8f8c") > 60 ? "#8a8f8c" : fallback[1]];
+    if (A.length) return [fallback[0], A[0]];
+    return fallback;
+  }
   try { const s = localStorage.getItem("cp-sort"); if (s) [sortKey, sortDir] = JSON.parse(s); } catch (e) {}
 
   async function load() {
@@ -562,6 +598,9 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     if (h && DATA.weeks.some(w => w.week === +h[1])) start = +h[1];
     show(start);
     drawTrend();
+    if (latest.teams) {
+      try { TEAMS = await (await fetch("data/" + latest.teams, { cache: "no-cache" })).json(); renderVs(); renderRows(); } catch (e) {}
+    }
     if (latest.projections) {
       try { PROJ = await (await fetch("data/" + latest.projections, { cache: "no-cache" })).json(); renderProj(); } catch (e) {}
     }
@@ -592,7 +631,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
         ? { bar: `<div class="gbar"><i class="cp" style="width:${w}%"></i></div>`, lab: `<span class="gap cp">CP +${g}</span>` }
         : { bar: `<div class="gbar"><i class="ap" style="width:${w}%"></i></div>`, lab: `<span class="gap ap">AP +${-g}</span>` };
     };
-    const link = t => `<button type="button" class="tlink" data-team="${esc(t.team)}">${esc(t.team)}</button>`;
+    const link = t => `${logo(t.team)}<button type="button" class="tlink" data-team="${esc(t.team)}">${esc(t.team)}</button>`;
     $("combined").innerHTML = t25.map(t => {
       const gc = hasAP ? gapCell(t.rank, t.ap) : { bar: "<div></div>", lab: "" };
       return `<li><span class="r">${t.rank}</span><span class="t">${link(t)}</span><span class="rec">${t.w}-${t.l}</span>
@@ -636,7 +675,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
       <tr data-team="${esc(t.team.toLowerCase())}" data-conf="${esc(t.conf)}">
         <td class="rk">${t.rank}</td>
         <td class="n ${t.move > 0 ? "up" : t.move < 0 ? "down" : ""}">${t.move == null ? "–" : t.move > 0 ? "▲" + t.move : t.move < 0 ? "▼" + -t.move : "="}</td>
-        <td class="l tm"><button type="button" class="tlink" data-team="${esc(t.team)}">${esc(t.team)}</button></td>
+        <td class="l tm"><span class="tw">${logo(t.team)}<button type="button" class="tlink" data-team="${esc(t.team)}">${esc(t.team)}</button></span></td>
         <td class="l cf m-hide">${esc(t.conf)}</td>
         <td class="n">${t.w}-${t.l}</td>
         <td class="n">${t.score.toFixed(1)}</td>
@@ -755,7 +794,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     if (s === 0) return "Pick'em";
     return `${g.spread > 0 ? g.home : g.away} −${s % 1 ? s.toFixed(1) : s}`;
   };
-  const tnm = (name, fcs) => fcs ? esc(name) : `<button type="button" class="tlink" data-team="${esc(name)}">${esc(name)}</button>`;
+  const tnm = (name, fcs) => logo(name) + (fcs ? esc(name) : `<button type="button" class="tlink" data-team="${esc(name)}">${esc(name)}</button>`);
   function gameItem(g, done) {
     const hp = Math.round(g.homeWin * 100), ap = 100 - hp;
     const homeFav = g.spread > 0 || (g.spread === 0 && hp >= 50);
@@ -773,7 +812,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
         ${side(g.away, g.awayFCS, g.aRank, g.aScore, g.aFinal, !homeFav, aWon, hWon, "")}
         ${side(g.home, g.homeFCS, g.hRank, g.hScore, g.hFinal, homeFav, hWon, aWon, g.neutral ? "vs" : "at")}
       </div>
-      ${done ? "" : `<div class="wp" title="Win chance"><div class="bar"><i class="a" style="width:${ap}%"></i><i class="h" style="width:${hp}%"></i></div>
+      ${done ? "" : (() => { const [hc, ac] = barColors(g.home, g.away); return `<div class="wp" title="Win chance"><div class="bar"><i style="width:${ap}%;background:${ac}"></i><i style="width:${hp}%;background:${hc}"></i></div>`; })() + `
         <div class="lab"><span>${esc(g.away)} ${ap}%</span><span>${hp}% ${esc(g.home)}</span></div></div>`}
       ${right}
     </li>`;
@@ -862,7 +901,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     const rows = games.map(g => `
       <tr>
         <td class="n c-wk" style="text-align:left">${g[0]}</td>
-        <td><span class="m-site">${g[2] === -1 ? "at " : g[2] === 0 ? "(N) " : ""}</span>${g[6] ? `<span class="orank">#${g[6]}</span>` : ""}${g[9] ? oppLabel(g) : `<button type="button" class="tlink" data-team="${esc(g[1])}">${esc(g[1])}</button>`}</td>
+        <td><span class="m-site">${g[2] === -1 ? "at " : g[2] === 0 ? "(N) " : ""}</span>${g[6] ? `<span class="orank">#${g[6]}</span>` : ""}${logo(g[1], 18)}${g[9] ? oppLabel(g) : `<button type="button" class="tlink" data-team="${esc(g[1])}">${esc(g[1])}</button>`}</td>
         <td class="muted c-site">${site(g[2])}</td>
         <td class="${g[3] > g[4] ? "res-w" : "res-l"}">${g[3] > g[4] ? "W" : "L"} ${g[3]}-${g[4]}</td>
         <td><div class="chance" title="A Top-25 team wins this game ${pc(g[5])} of the time"><div class="track2"><i style="width:${(g[5] * 100).toFixed(0)}%"></i></div><span>${pc(g[5])}</span></div></td>
@@ -886,7 +925,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     $("tp").innerHTML = `
       <div class="tp-head">
         <div class="tp-rank">${t.rank}</div>
-        <div class="tp-name" id="tp-name">${esc(name)}</div>
+        <div class="tp-name" id="tp-name">${logo(name, 34)}${esc(name)}</div>
         <button type="button" class="tp-close" id="tp-close">Close</button>
         <div class="tp-meta">${esc(t.conf)} · ${t.w}-${t.l} · Score ${t.score.toFixed(1)}${t.ap ? ` · AP #${t.ap}` : DATA.apAvailable ? " · Unranked in AP" : ""} · Week ${cur.week}</div>
       </div>

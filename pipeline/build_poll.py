@@ -29,6 +29,8 @@ CACHE = os.path.join(ROOT, "pipeline", ".cache")
 FCS = "FCS"
 SCHEDULE_URL = "https://raw.githubusercontent.com/sportsdataverse/cfbfastR-data/main/schedules/csv/cfb_schedules_{y}.csv"
 CFBD = "https://api.collegefootballdata.com"
+TEAM_INFO_URL = "https://raw.githubusercontent.com/sportsdataverse/cfbfastR-data/main/team_info/parquet/cfb_team_info_{y}.parquet"
+LOGO_URL = "https://cdn.collegefootballdata.com/{variant}/64/{id}.png"
 
 # Fitted on 2015-2025 in prototype/v2.py
 CAL_A, CAL_H = 0.81, 0.34
@@ -308,6 +310,51 @@ def load_ap(season):
     return polls
 
 
+# ---------------------------------------------------------------- team colors and logos
+def hexcolor(v):
+    v = str(v or "").strip().lower()
+    return v if len(v) == 7 and v.startswith("#") and all(c in "0123456789abcdef" for c in v[1:]) else None
+
+
+def build_teams(season, names):
+    """Colors and ESPN ids for every team that appears in the data; downloads missing logos."""
+    path = os.path.join(CACHE, f"teaminfo{season}.parquet")
+    try:
+        fetch(TEAM_INFO_URL.format(y=season), dest=path)
+    except Exception as e:
+        print("team info unavailable:", e)
+        if not os.path.exists(path):
+            return {}
+    info = pd.read_parquet(path)
+    info = info.drop_duplicates("school").set_index("school")
+    teams = {}
+    for n in sorted(names):
+        if n not in info.index:
+            continue
+        r = info.loc[n]
+        teams[n] = dict(id=int(r.team_id), abbr=str(r.abbreviation or ""),
+                        color=hexcolor(r.color), alt=hexcolor(r.alt_color))
+    got = 0
+    for n, t in teams.items():
+        for variant, folder in (("logos", "logos"), ("logos-dark", os.path.join("logos", "dark"))):
+            dest = os.path.join(ROOT, folder, f"{t['id']}.png")
+            if os.path.exists(dest):
+                continue
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            try:
+                fetch(LOGO_URL.format(variant=variant, id=t["id"]), dest=dest)
+                got += 1
+            except Exception:
+                pass
+    t_with_logo = 0
+    for t in teams.values():
+        t["logo"] = os.path.exists(os.path.join(ROOT, "logos", f"{t['id']}.png"))
+        t["logoDark"] = os.path.exists(os.path.join(ROOT, "logos", "dark", f"{t['id']}.png"))
+        t_with_logo += t["logo"]
+    print(f"teams: {len(teams)} with colors, {t_with_logo} with logos ({got} downloaded)")
+    return teams
+
+
 # ---------------------------------------------------------------- build
 def r3(x):
     return None if x is None or (isinstance(x, float) and np.isnan(x)) else round(float(x), 3)
@@ -397,11 +444,17 @@ def build(season):
     rank = {x["team"]: x["rank"] for x in weeks_out[-1]["teams"]} if weeks_out else {}
     proj = projections.build_projections(g, teams, g_last, teams_last, upcoming, rank)
     proj["updated"] = out["updated"]
+    names = set(teams) | set(g.home_team) | set(g.away_team)
+    if upcoming is not None and not upcoming.empty:
+        names |= set(upcoming.home_team) | set(upcoming.away_team)
+    with open(os.path.join(ROOT, "data", f"teams-{season}.json"), "w") as f:
+        json.dump(build_teams(season, names), f, separators=(",", ":"))
     with open(os.path.join(ROOT, "data", f"projections-{season}.json"), "w") as f:
         json.dump(proj, f, separators=(",", ":"))
     print(f"projections: week {proj['nextWeek']}, {len(proj['games'])} games")
     with open(os.path.join(ROOT, "data", "latest.json"), "w") as f:
         json.dump(dict(season=season, file=f"poll-{season}.json", projections=f"projections-{season}.json",
+                       teams=f"teams-{season}.json",
                        updated=out["updated"]), f)
     print(f"wrote {path}")
 
