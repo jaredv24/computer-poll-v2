@@ -101,10 +101,18 @@ def game_row(mdl, gid, week, date, home, away, home_name, away_name, neutral, ra
                 hScore=int(round(hs)), aScore=int(round(as_)), spread=half(spread), homeWin=round(p, 3))
 
 
-def build_projections(g, teams, g_last, teams_last, upcoming, rank):
+def build_projections(g, teams, g_last, teams_last, upcoming, rank, lines=None):
     """g: this season's completed games; rank: team -> current Computer Poll rank."""
     targets = last_season_targets(g_last, teams_last)
-    out = dict(sigma=SIGMA, games=[], nextWeek=None, record=[])
+    lines = lines or {}
+    out = dict(sigma=SIGMA, games=[], nextWeek=None, record=[], hasLines=bool(lines))
+
+    def add_line(row):
+        ln = lines.get(row["id"])
+        if ln:
+            row["book"] = half(ln["margin"])
+            row["books"] = len(ln["books"])
+        return row
 
     # How the model did on each completed week, predicting from games before it
     for o in sorted(g.order.unique()):
@@ -114,6 +122,7 @@ def build_projections(g, teams, g_last, teams_last, upcoming, rank):
         for r in now.itertuples():
             pr = game_row(mdl, r.game_id, r.week, None, r.home, r.away, r.home_team, r.away_team, r.neutral, {})
             pr.update(hFinal=int(r.hp), aFinal=int(r.ap))
+            add_line(pr)
             pr["correct"] = (pr["spread"] > 0) == (r.hp > r.ap) if pr["spread"] != 0 else None
             pr["miss"] = round(abs(pr["spread"] - (r.hp - r.ap)), 1)
             rows.append(pr)
@@ -132,6 +141,6 @@ def build_projections(g, teams, g_last, teams_last, upcoming, rank):
         out["nextPost"] = bool(nxt >= 20)
         out["hfa"] = round(float(mdl["h"]) * 2, 1)
         for r in wk.itertuples():
-            out["games"].append(game_row(mdl, r.game_id, r.week, str(r.start_date), r.home, r.away,
-                                         r.home_team, r.away_team, r.neutral, rank))
+            out["games"].append(add_line(game_row(mdl, r.game_id, r.week, str(r.start_date), r.home, r.away,
+                                                  r.home_team, r.away_team, r.neutral, rank)))
     return out

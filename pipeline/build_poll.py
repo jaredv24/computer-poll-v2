@@ -296,6 +296,34 @@ def attach_location(adv, g):
     return adv
 
 
+def load_lines(season):
+    """Sportsbook spreads by game id: the median across books, as the home team's projected margin.
+
+    CFBD reports `spread` from the home team's side (negative = home favored), so the margin is -spread.
+    Before kickoff it is the current line; after the game it is where the books closed.
+    """
+    out = {}
+    for stype in ("regular", "postseason"):
+        try:
+            data = cfbd("/lines", year=season, seasonType=stype)
+        except Exception as e:
+            print("lines unavailable:", e)
+            data = None
+        for gm in data or []:
+            vals, books = [], []
+            for ln in gm.get("lines") or []:
+                try:
+                    v = float(ln.get("spread"))
+                except (TypeError, ValueError):
+                    continue
+                vals.append(v)
+                books.append(ln.get("provider"))
+            if vals and gm.get("id") is not None:
+                out[int(gm["id"])] = dict(margin=-float(np.median(vals)), books=[b for b in books if b])
+    print(f"sportsbook lines: {len(out)} games")
+    return out
+
+
 def load_ap(season):
     data = cfbd("/rankings", year=season)
     if not data:
@@ -442,7 +470,7 @@ def build(season):
     g_last, teams_last, _ = load_season(season - 1)
     upcoming = projections.load_upcoming(os.path.join(CACHE, f"s{season}.csv"), set(teams))
     rank = {x["team"]: x["rank"] for x in weeks_out[-1]["teams"]} if weeks_out else {}
-    proj = projections.build_projections(g, teams, g_last, teams_last, upcoming, rank)
+    proj = projections.build_projections(g, teams, g_last, teams_last, upcoming, rank, load_lines(season))
     proj["updated"] = out["updated"]
     names = set(teams) | set(g.home_team) | set(g.away_team)
     if upcoming is not None and not upcoming.empty:
