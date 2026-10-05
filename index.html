@@ -162,7 +162,7 @@ picture.lg { width: 20px; height: 20px; }
 /* Projections */
 .weeks button[id^="pf-"] { padding-inline: 14px; font-size: 0.95rem; }
 .proj { list-style: none; margin: 0; padding: 0; display: grid; }
-.pg { display: grid; grid-template-columns: 74px minmax(0, 1fr) 200px 130px; gap: 6px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.pg { display: grid; grid-template-columns: 74px minmax(0, 1fr) 260px 130px; gap: 6px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
 .pg .when { font: 600 0.78rem/1.25 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .pg .teams { display: grid; gap: 4px; min-width: 0; }
 .pg .side { display: grid; grid-template-columns: 20px 32px 20px minmax(0, 1fr) auto; column-gap: 6px; align-items: center; }
@@ -173,11 +173,14 @@ picture.lg { width: 20px; height: 20px; }
 .pg .side .sc { font: 600 1.05rem/1 var(--mono); }
 .pg .side.fav .sc { color: var(--turf); }
 .pg .side.lost .nm, .pg .side.lost .sc { color: var(--muted); font-weight: 400; }
-.pg .wp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; width: 200px; min-width: 0; }
+.pg .wp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; width: 260px; min-width: 0; }
 .pg .wp .barrow, .pg .wp .lab { width: 100%; }
 .pg .line { min-width: 0; }
-.pg .wp .barrow { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.pg .wp .bar { flex: 1 1 auto; min-width: 0; display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: var(--rule); }
+.pg .wp .barrow { display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; align-items: center; gap: 6px; min-width: 0; }
+.pg .wp .pct { font: 700 0.85rem/1 var(--mono); color: var(--ink); }
+.pg .wp .pct.r { text-align: right; }
+.pg .wp .lab { padding-inline: 44px; }
+.pg .wp .bar { min-width: 0; display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--rule); }
 .pg .wp .out { font: 600 0.78rem/1 var(--mono); color: var(--muted); flex: none; }
 .pg .wp .bar i { display: flex; align-items: center; height: 100%; font: 700 0.75rem/1 var(--mono); font-style: normal; overflow: hidden; white-space: nowrap; }
 .pg .wp .bar i:first-child { justify-content: flex-start; padding-left: 6px; }
@@ -569,20 +572,34 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     const m = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
     return m ? "#" + m.slice(0, 3).map(v => (+v).toString(16).padStart(2, "0")).join("") : "#ffffff";
   }
+  const ab = n => (TEAMS[n] && TEAMS[n].abbr) || n;
   function textOn(col) {
     if (!col.startsWith("#")) return "var(--bg)";
     const [r, g, b] = hex2rgb(col).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#111611" : "#ffffff";
   }
+  // nudge a color lighter (dark page) or darker (light page) until it stands out from the background
+  function visible(col, bg) {
+    if (!col) return null;
+    const dark = hex2rgb(bg).reduce((a, b) => a + b, 0) < 384;
+    const target = dark ? [255, 255, 255] : [0, 0, 0];
+    let c = col;
+    for (let k = 0; k <= 6 && cdist(c, bg) <= 55; k++) {
+      const mix = k * 0.1;
+      c = "#" + hex2rgb(col).map((v, i) => Math.round(v + (target[i] - v) * mix).toString(16).padStart(2, "0")).join("");
+    }
+    return cdist(c, bg) > 55 ? c : null;
+  }
   function barColors(home, away) {
     const bg = pageBg(), fallback = ["var(--turf)", "var(--seg3)"];
-    const opts = n => { const t = TEAMS[n]; return t ? [t.color, t.alt].filter(Boolean).filter(c => cdist(c, bg) > 55) : []; };
+    const opts = n => { const t = TEAMS[n]; return t ? [t.color, t.alt].map(c => visible(c, bg)).filter(Boolean) : []; };
     const H = opts(home), A = opts(away);
     for (const h of H) for (const a of A) if (cdist(h, a) > 60) return [h, a];
     if (H.length) return [H[0], cdist(H[0], "#8a8f8c") > 60 ? "#8a8f8c" : fallback[1]];
     if (A.length) return [fallback[0], A[0]];
     return fallback;
   }
+
   try { const s = localStorage.getItem("cp-sort"); if (s) [sortKey, sortDir] = JSON.parse(s); } catch (e) {}
 
   async function load() {
@@ -827,9 +844,9 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
       </div>
       ${done ? "" : (() => {
         const [hc, ac] = barColors(g.home, g.away);
-        const seg = (pct, col, side) => `<i style="width:${pct}%;background:${col};color:${textOn(col)}">${pct >= 16 ? pct + "%" : ""}</i>`;
-        return `<div class="wp" title="Win chance: ${esc(g.away)} ${ap}%, ${esc(g.home)} ${hp}%"><div class="barrow"><div class="bar">${seg(ap, ac)}${seg(hp, hc)}</div></div>
-        <div class="lab"><span>${esc(g.away)}${ap < 16 ? " " + ap + "%" : ""}</span><span>${hp < 16 ? hp + "% " : ""}${esc(g.home)}</span></div></div>`;
+        const seg = (pct, col) => `<i style="width:${pct}%;background:${col}"></i>`;
+        return `<div class="wp" title="Win chance: ${esc(g.away)} ${ap}%, ${esc(g.home)} ${hp}%"><div class="barrow"><span class="pct">${ap}%</span><div class="bar">${seg(ap, ac)}${seg(hp, hc)}</div><span class="pct r">${hp}%</span></div>
+        <div class="lab"><span>${esc(ab(g.away))}</span><span>${esc(ab(g.home))}</span></div></div>`;
       })()}
       ${right}
     </li>`;
