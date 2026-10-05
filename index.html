@@ -219,6 +219,10 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
 .effgrid div { border-top: 2px solid var(--seg4); padding-top: 8px; display: grid; gap: 2px; }
 .effgrid b { font: 700 1.7rem/1 var(--display); }
 .effgrid span { font-size: 0.88rem; color: var(--muted); }
+.rchart { width: 100%; height: auto; display: block; overflow: visible; }
+.rlegend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 0.88rem; color: var(--muted); }
+.rlegend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--turf); margin-right: 6px; vertical-align: middle; }
+.rlegend i.ap { border-top: 2px dashed var(--pylon); }
 .explain { font-size: 0.93rem; color: var(--muted); max-width: 680px; }
 </style>
 </head>
@@ -592,6 +596,44 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     return i < 0 ? null : i + 1;
   }
 
+
+  function rankChart(name) {
+    const pts = DATA.weeks.map(w => {
+      const t = w.teams.find(x => x.team === name);
+      return { week: w.week, rank: t ? t.rank : null, ap: t ? t.ap : null };
+    }).filter(p => p.rank != null);
+    if (!pts.length) return "";
+    const n = DATA.weeks.at(-1).teams.length;
+    const worst = Math.max(25, ...pts.map(p => p.rank));
+    const yMax = Math.min(n, Math.ceil(worst / 10) * 10);
+    const W = Math.max(300, Math.min(760, window.innerWidth - 90)), H = 220, L = 36, R = 16, T = 18, B = 28;
+    const xs = i => pts.length === 1 ? (L + W - R) / 2 : L + (W - L - R) * i / (pts.length - 1);
+    const ys = r => T + (H - T - B) * (r - 1) / (yMax - 1);
+    const ticks = [1, 25, ...[50, 75, 100, 125].filter(v => v < yMax - 8), yMax].filter((v, i, a) => a.indexOf(v) === i);
+    let svg = `<rect x="${L}" y="${ys(1) - 4}" width="${W - L - R}" height="${ys(25) - ys(1) + 8}" fill="var(--turf-soft)" opacity="0.6"/>`;
+    svg += `<text x="${L + 6}" y="${ys(25) - 6}" font-family="var(--display)" font-size="11" letter-spacing="1" fill="var(--turf)">TOP 25</text>`;
+    svg += ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--rule)"/><text x="${L - 8}" y="${ys(v) + 4}" text-anchor="end" font-family="var(--mono)" font-size="11" fill="var(--muted)">${v}</text>`).join("");
+    svg += pts.map((p, i) => `<text x="${xs(i)}" y="${H - 8}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--muted)">W${p.week}</text>`).join("");
+    // AP: dashed segments between consecutive ranked weeks, dots where ranked
+    let apPath = "", prev = false;
+    pts.forEach((p, i) => { if (p.ap != null) { apPath += `${prev ? "L" : "M"}${xs(i)},${ys(p.ap)}`; prev = true; } else prev = false; });
+    if (apPath) svg += `<path d="${apPath}" fill="none" stroke="var(--pylon)" stroke-width="2" stroke-dasharray="5 4"/>`;
+    svg += pts.map((p, i) => p.ap == null ? "" : `<circle cx="${xs(i)}" cy="${ys(p.ap)}" r="3.5" fill="var(--bg)" stroke="var(--pylon)" stroke-width="2"><title>Week ${p.week}: AP #${p.ap}</title></circle>`).join("");
+    const cpPath = pts.map((p, i) => `${i ? "L" : "M"}${xs(i)},${ys(p.rank)}`).join("");
+    svg += `<path d="${cpPath}" fill="none" stroke="var(--turf)" stroke-width="3" stroke-linejoin="round"/>`;
+    svg += pts.map((p, i) => {
+      const isCur = p.week === cur.week;
+      return `<circle cx="${xs(i)}" cy="${ys(p.rank)}" r="${isCur ? 6 : 4}" fill="var(--turf)" stroke="var(--bg)" stroke-width="2"><title>Week ${p.week}: Computer Poll #${p.rank}</title></circle>
+        <text x="${xs(i)}" y="${ys(p.rank) - 10}" text-anchor="middle" font-family="var(--display)" font-weight="700" font-size="${isCur ? 15 : 13}" fill="var(--ink)">${p.rank}</text>`;
+    }).join("");
+    const hasAP = pts.some(p => p.ap != null);
+    return `<div class="stack">
+        <div><h3>Rank by Week</h3><p class="sub">Higher on the chart is better. The shaded band is the Top 25.</p></div>
+        <div class="rlegend"><span><i></i>Computer Poll</span>${hasAP ? `<span><i class="ap"></i>AP poll (gaps are weeks unranked)</span>` : DATA.apAvailable ? `<span>Not ranked in the AP poll</span>` : ""}</div>
+        <div class="scroll"><svg class="rchart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(name)} rank by week: ${pts.map(p => "week " + p.week + " #" + p.rank).join(", ")}">${svg}</svg></div>
+      </div>`;
+  }
+
   async function openTeam(name) {
     const t = cur.teams.find(x => x.team === name);
     if (!t) return;
@@ -661,6 +703,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
         <button type="button" class="tp-close" id="tp-close">Close</button>
         <div class="tp-meta">${esc(t.conf)} · ${t.w}-${t.l} · Score ${t.score.toFixed(1)}${t.ap ? ` · AP #${t.ap}` : DATA.apAvailable ? " · Unranked in AP" : ""} · Week ${cur.week}</div>
       </div>
+      ${rankChart(name)}
       <div class="stack">
         <div><h3>Why ${ord(t.rank)}</h3><p class="sub">Every team starts at 50, the FBS average. Each part of the résumé adds or subtracts points.</p></div>
         <div class="why">
