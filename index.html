@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Computer Poll v2.0</title>
+<meta name="description" content="Draft v2.0 methodology for The Computer Poll: one iterative team rating, calibrated Strength of Record, and a 2015–2025 backtest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<style>
+/* Layout: a single reading column with wide breakout panels for the poll board and tables; yard-line rules mark sections. */
+:root {
+  --bg: #f4f6f3;
+  --panel: #ffffff;
+  --ink: #16201a;
+  --muted: #56645b;
+  --rule: #d5ddd7;
+  --turf: #1b6a44;
+  --turf-soft: #dcebe2;
+  --pylon: #d9601a;
+  --seg1: #1b6a44; --seg2: #4c8f6b; --seg3: #86b59a; --seg4: #d9601a;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1512; --panel: #161e1a; --ink: #e4ebe6; --muted: #9aa9a0; --rule: #2a3530;
+    --turf: #5cc28c; --turf-soft: #1d3328; --pylon: #f08a4b;
+    --seg1: #5cc28c; --seg2: #3f9a6c; --seg3: #2e6e4f; --seg4: #f08a4b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1512; --panel: #161e1a; --ink: #e4ebe6; --muted: #9aa9a0; --rule: #2a3530;
+  --turf: #5cc28c; --turf-soft: #1d3328; --pylon: #f08a4b;
+  --seg1: #5cc28c; --seg2: #3f9a6c; --seg3: #2e6e4f; --seg4: #f08a4b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 1.0625rem/1.65 var(--body);
+  padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 48px 80px; display: grid; gap: 64px; }
+.col { max-width: 680px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.05; margin: 0; }
+h1 { font-size: clamp(2.6rem, 7vw, 4.6rem); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; }
+h2 { font-size: clamp(1.9rem, 4vw, 2.5rem); font-weight: 700; text-transform: uppercase; }
+h3 { font-size: 1.45rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.01em; }
+p { margin: 0; }
+a { color: var(--turf); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--pylon); outline-offset: 2px; }
+.eyebrow { font: 600 0.82rem/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.eyebrow b { color: var(--pylon); font-weight: 700; }
+.lead { font-size: 1.22rem; line-height: 1.55; }
+.muted { color: var(--muted); }
+.stack { display: grid; gap: 16px; }
+.stack-lg { display: grid; gap: 28px; }
+code, .num { font-family: var(--mono); font-size: 0.9em; font-variant-numeric: tabular-nums; }
+
+/* Section rule: a yard line with hash marks */
+section { display: grid; gap: 24px; }
+.yard { display: flex; align-items: center; gap: 14px; }
+.yard .line { flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--rule) 0 10px, transparent 10px 14px); }
+.yard .mark { font: 700 1rem/1 var(--display); color: var(--turf); letter-spacing: 0.08em; }
+
+/* Hero */
+header { display: grid; gap: 22px; }
+.weights { display: grid; gap: 10px; }
+.wbar { display: flex; height: 54px; border-radius: 4px; overflow: hidden; }
+.wbar div { display: flex; align-items: center; padding-inline: 12px; color: #fff; font: 700 1.05rem/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.wbar .s1 { background: var(--seg1); flex: 55; }
+.wbar .s2 { background: var(--seg2); flex: 20; }
+.wbar .s3 { background: var(--seg3); flex: 15; }
+.wbar .s4 { background: var(--seg4); flex: 10; }
+:root:not([data-theme="light"]) .wbar div { color: #fff; }
+.wlegend { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 20px; font-size: 0.95rem; }
+.wlegend div { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: start; }
+.wlegend i { width: 14px; height: 14px; border-radius: 2px; margin-top: 5px; }
+.wlegend b { font-family: var(--display); font-size: 1.1rem; letter-spacing: 0.02em; }
+
+/* Poll board */
+.board { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; display: grid; gap: 14px; }
+.board-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 20px; }
+.scroll { overflow-x: auto; }
+.poll { width: 100%; min-width: 600px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.poll th { font: 600 0.78rem/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 0 8px 10px; border-bottom: 1px solid var(--rule); }
+.poll td { padding: 7px 8px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.poll tr:last-child td { border-bottom: 0; }
+.poll .rk { font: 700 1.3rem/1 var(--display); width: 44px; color: var(--turf); }
+.poll .tm { font-weight: 600; white-space: nowrap; }
+.poll .rec, .poll .sc { font-family: var(--mono); font-size: 0.88rem; white-space: nowrap; }
+.poll .rng { width: 46%; }
+.track { position: relative; height: 18px; }
+.track .bg { position: absolute; inset: 8px 0; height: 2px; background: var(--rule); }
+.track .band { position: absolute; top: 5px; height: 8px; background: var(--turf-soft); border: 1px solid var(--turf); border-radius: 4px; }
+.track .dot { position: absolute; top: 3px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--pylon); }
+.track .lab { position: absolute; top: 0; font: 400 0.72rem/18px var(--mono); color: var(--muted); padding-left: 6px; }
+.axis { position: relative; height: 16px; font: 400 0.7rem/16px var(--mono); color: var(--muted); }
+.axis span { position: absolute; transform: translateX(-50%); }
+
+/* Steps */
+.steps { display: grid; gap: 44px; }
+.step { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 8px 28px; }
+.step .no { font: 700 3.4rem/0.9 var(--display); color: var(--turf); }
+.step .no small { display: block; font-size: 0.8rem; letter-spacing: 0.14em; color: var(--muted); margin-top: 6px; }
+.step .body { display: grid; gap: 14px; min-width: 0; }
+@media (max-width: 640px) { .step { grid-template-columns: 1fr; } .step .no { font-size: 2.4rem; } }
+.eq { overflow-x: auto; padding: 14px 16px; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--turf); border-radius: 4px; }
+.eq .katex-display { margin: 0; }
+.comp { display: grid; gap: 12px; padding-top: 6px; }
+.comp + .comp { border-top: 1px solid var(--rule); padding-top: 22px; }
+.comp h3 span { color: var(--pylon); }
+.q { font-style: italic; color: var(--muted); }
+ul.tight { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+/* Tables */
+.tbl { width: 100%; border-collapse: collapse; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.tbl th { font: 600 0.78rem/1.2 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 10px; border-bottom: 2px solid var(--ink); vertical-align: bottom; }
+.tbl td { padding: 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.tbl td.n { font-family: var(--mono); font-size: 0.88rem; white-space: nowrap; }
+.tbl tr.hl td { background: var(--turf-soft); font-weight: 600; }
+.tbl.wide { min-width: 720px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.stat { border-top: 2px solid var(--turf); padding-top: 10px; display: grid; gap: 4px; }
+.stat b { font: 700 2rem/1 var(--display); }
+.stat span { font-size: 0.92rem; color: var(--muted); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.checks li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
+.checks li::before { content: ""; width: 16px; height: 16px; border: 2px solid var(--pylon); border-radius: 3px; margin-top: 5px; }
+footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92rem; color: var(--muted); display: grid; gap: 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  .track .band, .track .dot { transition: transform .2s ease; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <div class="eyebrow"><b>Draft proposal</b> &nbsp;·&nbsp; Methodology v2.0 &nbsp;·&nbsp; October 5, 2026</div>
+  <h1>How The Computer Poll Works</h1>
+  <p class="lead col">The Computer Poll ranks teams on what they have done this season, with no preseason priors, recruiting data or predictive power ratings. Version 2.0 keeps that philosophy but measures it differently. Every part of the score draws on one team rating, and one calibrated probability does most of the work.</p>
+  <div class="weights" aria-label="Component weights">
+    <div class="wbar" role="img" aria-label="Strength of Record 55%, Quality Wins 20%, Loss Quality 15%, Game Control 10%">
+      <div class="s1">SOR 55%</div><div class="s2">QW 20%</div><div class="s3">LQ 15%</div><div class="s4">10%</div>
+    </div>
+    <div class="wlegend">
+      <div><i style="background:var(--seg1)"></i><span><b>Strength of Record</b><br><span class="muted">How unusual is this record for a Top-25 team on this schedule?</span></span></div>
+      <div><i style="background:var(--seg2)"></i><span><b>Quality Wins</b><br><span class="muted">Who did they beat?</span></span></div>
+      <div><i style="background:var(--seg3)"></i><span><b>Loss Quality</b><br><span class="muted">Were the losses forgivable?</span></span></div>
+      <div><i style="background:var(--seg4)"></i><span><b>Game Control</b><br><span class="muted">Did they win convincingly, given who they played?</span></span></div>
+    </div>
+  </div>
+</header>
+
+<section aria-labelledby="board-h">
+  <div class="yard"><span class="mark">2026</span><span class="line"></span></div>
+  <div class="board">
+    <div class="board-head">
+      <h2 id="board-h">Prototype Poll, Through Week 5</h2>
+      <span class="eyebrow">Score: 50 = FBS average, 10 = one SD</span>
+    </div>
+    <p class="muted" style="font-size:.95rem">The orange dot is the published rank. The band is the middle 80% of ranks across 300 replays of the season. Five weeks in, one flipped result can move an unbeaten team 40 places.</p>
+    <div class="scroll">
+      <table class="poll">
+        <thead><tr><th>#</th><th>Team</th><th>Rec</th><th>Score</th><th>Rank range</th></tr></thead>
+        <tbody id="poll"></tbody>
+        <tfoot><tr><td colspan="4"></td><td><div class="axis" id="axis"></div></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="changes-h">
+  <div class="yard"><span class="mark">WHAT CHANGED</span><span class="line"></span></div>
+  <div class="col stack">
+    <h2 id="changes-h">From v1.0.0 to v2.0</h2>
+    <ul class="tight">
+      <li>RPI-style opponent win percentage is replaced by an iterative rating, so schedule strength reaches past opponents' opponents.</li>
+      <li>Strength of Record uses fitted win probabilities and a Top-25 benchmark team. It is now the core of the score.</li>
+      <li>Results, Road Performance and Strength of Schedule are no longer separate components. Record, location and schedule are each counted once, inside Strength of Record.</li>
+      <li>Quality Wins rewards elite wins more steeply than average ones.</li>
+      <li>Dominance becomes Game Control: margin against expectation, with a smooth cap instead of a hard 21-point cap.</li>
+      <li>Components are combined as z-scores rather than a mix of percentages and percentiles.</li>
+      <li>Each team gets a rank range from resampling, replacing the Early Data label.</li>
+      <li>Weights are validated against 2015–2025 results.</li>
+    </ul>
+  </div>
+</section>
+
+<section aria-labelledby="method-h">
+  <div class="yard"><span class="mark">METHOD</span><span class="line"></span></div>
+  <h2 id="method-h">The Four Steps</h2>
+  <div class="steps">
+
+    <article class="step">
+      <div class="no">1<small>RATING</small></div>
+      <div class="body col">
+        <h3>Team Rating</h3>
+        <p>Every team gets one rating, <i>r</i>, solved from wins and losses only. Opponent quality, schedule strength and win probabilities all come from this number. It replaces v1.0.0's adjusted opponent win percentage (70% OWP + 30% OOWP).</p>
+        <div class="eq">$$P(i \text{ beats } j) = \frac{1}{1 + e^{-(r_i - r_j + h\,\ell_{ij})}}$$</div>
+        <p>Here ℓ is +1 when <i>i</i> is home, −1 away and 0 at a neutral site. Ratings are found by maximum likelihood across every game, so a win over a team that beat good teams is worth more, however many steps removed. OWP and OOWP stop two levels in, so a 9-3 team from a weak conference looks about the same as a 9-3 team from a strong one.</p>
+        <p><b>Undefeated teams.</b> A pure win/loss model pushes a 6-0 team toward infinity. Each team gets one ghost win and one ghost loss against a rating-0 team, the same correction the Colley Matrix uses. It adds no preseason information and fades as games accumulate.</p>
+        <p><b>Scale.</b> FBS average is 0. A 1.0 gap means the stronger team wins about 73% of neutral-site games.</p>
+        <p><b>FCS opponents.</b> All FCS teams are pooled into one rated team, fitted from every FBS-vs-FCS game including the previous three seasons. v1.0.0 gave FCS opponents a quality of zero.</p>
+      </div>
+    </article>
+
+    <article class="step">
+      <div class="no">2<small>ODDS</small></div>
+      <div class="body col">
+        <h3>Win Probabilities</h3>
+        <p>For a benchmark team B playing opponent <i>j</i>, the chance of winning comes from a curve fitted to real results:</p>
+        <div class="eq">$$p_j = \frac{1}{1 + e^{-a\,(r_B - r_j) - h\,\ell_j}}, \qquad 0.01 \le p_j \le 0.99$$</div>
+        <p><b>Calibration.</b> The slope <i>a</i> and home-field term <i>h</i> are fitted on 2015–2025 games, each predicted from ratings through the previous week only. The prototype fit is <span class="num">a = 0.81</span>, <span class="num">h = 0.34</span>, from 5,501 games.</p>
+        <p><b>Benchmark team.</b> B has the rating of the current #25 team. Against an average FBS team, which v1.0.0 used, nearly every good record scores close to 1.0. The question v2.0 asks is the committee's: how hard would it be for a good team to post this record on this schedule?</p>
+        <p><b>What this fixes.</b> v1.0.0 used 0.50 + 0.40 × (0.50 − opponent quality), which keeps <i>p</i> between 0.30 and 0.70. That under-credited elite wins and gave FCS opponents p ≈ 0.70. The fitted model gives a .500 FBS team at home an 83–89% chance against FCS.</p>
+      </div>
+    </article>
+
+    <article class="step">
+      <div class="no">3<small>RÉSUMÉ</small></div>
+      <div class="body col">
+        <h3>Components</h3>
+        <p>Record, schedule and location are counted once, inside Strength of Record. The other three add only what it cannot see. Below, <i>p</i><sub>j</sub> is the benchmark's chance of winning game <i>j</i> and <i>d</i><sub>j</sub> = 1 − <i>p</i><sub>j</sub> is that game's difficulty.</p>
+
+        <div class="comp">
+          <h3>Strength of Record <span>55%</span></h3>
+          <p class="q">How unusual is this record for a Top-25 team playing this schedule?</p>
+          <p>The benchmark's win total W<sub>B</sub> follows a Poisson-binomial distribution, computed exactly. For a team with W wins:</p>
+          <div class="eq">$$S = P(W_B > W) + \tfrac{1}{2}P(W_B = W), \qquad \text{SOR} = \Phi^{-1}(1 - S)$$</div>
+          <p>0 is a typical Top-25 résumé. +2 means only about 2% of Top-25 teams would do as well. SOR absorbs v1.0.0's Results, Strength of Schedule and Road Performance.</p>
+        </div>
+
+        <div class="comp">
+          <h3>Quality Wins <span>20%</span></h3>
+          <p class="q">Who did they beat?</p>
+          <div class="eq">$$\text{QW} = \sum_{j \in \text{wins}} d_j^{\,2}$$</div>
+          <p>Squaring makes the curve convex. A win the benchmark gets 30% of the time is worth 0.49, a coin-flip win 0.25, and a near-certain win almost nothing. No base credit per win, no division by games played, and no separate location or margin bonus.</p>
+        </div>
+
+        <div class="comp">
+          <h3>Loss Quality <span>15%</span></h3>
+          <p class="q">Were the losses forgivable?</p>
+          <div class="eq">$$\text{LQ} = -\frac{1}{L}\sum_{j \in \text{losses}} p_j^{\,2}\ \ (L \ge 1), \qquad \text{LQ} = 0\ \ (L = 0)$$</div>
+          <p>The average badness of a team's losses. A road loss at a top-5 team costs very little, and a home loss to a team the benchmark beats 95% of the time costs about 0.90. SOR already counts losses, so LQ averages. A summed version correlated 0.96 with SOR in the prototype; the average cuts that to 0.72.</p>
+        </div>
+
+        <div class="comp">
+          <h3>Game Control <span>10%</span></h3>
+          <p class="q">Did they win convincingly, given who they played?</p>
+          <div class="eq">$$g(m) = 21\tanh\!\left(\tfrac{m}{14}\right), \qquad \text{GC} = \frac{1}{n}\sum_j \Big[g(m_j) - \hat g(r_i - r_j + h\,\ell_j)\Big]$$</div>
+          <p>The soft cap keeps a 3-point and a 17-point win apart (4.4 vs 17.6) while flattening blowouts: 35 and 56 points score 20.7 and 21.0. The expected value ĝ is fitted on past games: <span class="num">ĝ(x) = 19.1 tanh(0.60x)</span>. This replaces Dominance, whose schedule adjustment moved scores only about ±1.5 points. Game Control is the only component that uses scores.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="step">
+      <div class="no">4<small>SCORE</small></div>
+      <div class="body col">
+        <h3>The Computer Poll Score</h3>
+        <p>Each component becomes a z-score across FBS teams, then is weighted and summed. z-scores keep magnitude that percentiles flatten.</p>
+        <div class="eq">$$\text{Score} = 0.55\,z_{\text{SOR}} + 0.20\,z_{\text{QW}} + 0.15\,z_{\text{LQ}} + 0.10\,z_{\text{GC}}$$</div>
+        <p>It is displayed as 50 + 10 × Score.</p>
+        <p><b>Head-to-head tiebreak.</b> If two teams played and their scores fall within half the median gap between adjacent teams in the top 40, the winner ranks ahead. The window is recomputed weekly, replacing v1.0.0's fixed 1.0-point window. Cycles (A beat B, B beat C, C beat A) are skipped.</p>
+        <p><b>Uncertainty.</b> Each resample replays every game from its fitted probability and reruns all four steps. The published rank always comes from actual results; the range shows how much it could move.</p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section aria-labelledby="bt-h">
+  <div class="yard"><span class="mark">BACKTEST</span><span class="line"></span></div>
+  <div class="col stack">
+    <h2 id="bt-h">Does It Explain the Results?</h2>
+    <p>Retrodictive accuracy is the share of games already played that the higher-ranked team won. v2.0 roughly matches the best simple methods and has the fewest severe misorderings. Its gains are mainly coherence: each factor is counted once and weighted on purpose.</p>
+  </div>
+  <div class="scroll">
+    <table class="tbl wide">
+      <thead><tr><th>Method</th><th>Games correctly ordered, 2015–2025</th><th>2023–2025 only</th><th>Misordering severity<br>(rank gap per game, lower is better)</th></tr></thead>
+      <tbody>
+        <tr><td>Colley Matrix</td><td class="n">82.0%</td><td class="n">81.4%</td><td class="n">3.75</td></tr>
+        <tr><td>Team Rating alone (Step 1)</td><td class="n">81.6%</td><td class="n">81.7%</td><td class="n">3.84</td></tr>
+        <tr class="hl"><td>v2.0, starting weights</td><td class="n">81.5%</td><td class="n">81.1%</td><td class="n">3.62</td></tr>
+        <tr><td>Classic RPI (25/50/25)</td><td class="n">81.1%</td><td class="n">79.8%</td><td class="n">3.62</td></tr>
+        <tr><td>v2.0, SOR alone</td><td class="n">81.1%</td><td class="n">81.2%</td><td class="n">4.03</td></tr>
+        <tr><td>Win percentage</td><td class="n">80.2%</td><td class="n">79.6%</td><td class="n">4.80</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted col" style="font-size:.95rem">Final rankings, FBS-vs-FBS games. v1.0.0 is not included because its full weights were unavailable when the prototype was built.</p>
+  <div class="stats">
+    <div class="stat"><b>±3.6 pts</b><span>Largest gap between predicted and actual win rate across ten probability bins</span></div>
+    <div class="stat"><b>0.72</b><span>SOR–Loss Quality correlation after switching LQ to an average (was 0.96)</span></div>
+    <div class="stat"><b>0%</b><span>Game Control weight when fitted to retrodictive accuracy, which only scores who beat whom</span></div>
+    <div class="stat"><b>~80 / 15 / 5</b><span>Fitted SOR / Quality Wins / Loss Quality weights, held out by season</span></div>
+  </div>
+  <p class="col"><b>2025 final top 10 (after bowls):</b> Indiana 16-0, Oregon 13-2, Miami 13-3, Ohio State 12-2, Texas Tech 12-2, Ole Miss 13-2, Georgia 12-2, BYU 12-2, Notre Dame 10-2, Alabama 11-4.</p>
+</section>
+
+<section aria-labelledby="log-h">
+  <div class="yard"><span class="mark">CHANGELOG</span><span class="line"></span></div>
+  <h2 id="log-h">v1.0.0 → v2.0, Line by Line</h2>
+  <div class="scroll">
+    <table class="tbl wide">
+      <thead><tr><th>v1.0.0</th><th>v2.0</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Opponent quality = 0.70 × adj. OWP + 0.30 × OOWP</td><td>Win/loss Bradley-Terry rating</td><td>Schedule information reaches past two levels</td></tr>
+        <tr><td>FCS opponent quality = 0</td><td>Pooled FCS rating, three seasons of games</td><td>FCS wins were over-credited</td></tr>
+        <tr><td>SOR p = 0.50 + 0.40 × (0.50 − OQ)</td><td>Logistic curve fitted to 2015–2025</td><td>Old p stayed within 0.30–0.70</td></tr>
+        <tr><td>SOR benchmark: average FBS team</td><td>Benchmark: #25-rated team</td><td>Separates contenders</td></tr>
+        <tr><td>Results (25%)</td><td>Folded into SOR</td><td>Record was counted several times</td></tr>
+        <tr><td>Strength of Schedule</td><td>Folded into SOR</td><td>Schedule was counted several times</td></tr>
+        <tr><td>Road Performance (8%)</td><td>Folded into SOR</td><td>Location was counted several times</td></tr>
+        <tr><td>Quality Wins: 1 + 1.25 × OQ + bonuses, ÷ games</td><td>Sum of d² over wins</td><td>Elite wins count more</td></tr>
+        <tr><td>Loss Quality: base penalty 1 per loss</td><td>Average p² over losses</td><td>Measures how bad, not how many</td></tr>
+        <tr><td>Dominance: margin capped at 21 + small SOS term</td><td>Game Control: soft cap vs expectation</td><td>Old adjustment was about ±1.5 points</td></tr>
+        <tr><td>Results as %, others as percentiles</td><td>All z-scores</td><td>One scale, magnitude kept</td></tr>
+        <tr><td>Head-to-head window: 1.0 point</td><td>Half the median adjacent gap, top 40</td><td>Scales with the score's spread</td></tr>
+        <tr><td>“Early Data” label</td><td>80% rank range from resampling</td><td>Shows uncertainty without priors</td></tr>
+        <tr><td>No backtest</td><td>2015–2025 backtest, fitted weights</td><td>Weights are defensible</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="open-h">
+  <div class="yard"><span class="mark">OPEN</span><span class="line"></span></div>
+  <div class="col stack">
+    <h2 id="open-h">Open Questions</h2>
+    <ul class="checks">
+      <li>Keep Game Control at 10% even though fitting sets it to 0?</li>
+      <li>Adopt fitted weights (about SOR 80%, Quality Wins 15%, Loss Quality 5%) or keep the starting weights?</li>
+      <li>Narrow rank ranges by resampling only games decided by one score or less?</li>
+      <li>Add v1.0.0 to the backtest once its full weights are in hand.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>Data: <a href="https://github.com/sportsdataverse/cfbfastR-data" rel="noopener">cfbfastR schedules</a>, 2014 through week 5 of 2026, every game involving an FBS team. 2014–2022 are regular season only.</p>
+  <p>Prototype code: <a href="prototype/v2.py">prototype/v2.py</a>. Current methodology: <a href="https://thecomputerpoll.com/methodology/" rel="noopener">thecomputerpoll.com/methodology</a>.</p>
+</footer>
+</main>
+
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/contrib/auto-render.min.js"></script>
+<script>
+const POLL = [[1,"Alabama","5-0",75.9,1,45],[2,"Miami","5-0",73.2,1,51],[3,"Notre Dame","5-0",70.1,2,57],[4,"Texas","4-0",69.1,3,76],[5,"Texas Tech","5-0",67.7,4,66],[6,"James Madison","5-0",65.0,5,66],[7,"Pittsburgh","5-0",65.0,4,69],[8,"Nebraska","5-0",64.4,5,76],[9,"Mississippi State","4-1",63.9,6,90],[10,"UCLA","4-0",63.8,4,83],[11,"North Dakota State","5-0",63.7,3,71],[12,"Georgia","5-0",63.5,4,78],[13,"Indiana","5-0",62.8,6,87],[14,"BYU","4-0",62.7,7,82],[15,"Ohio State","4-1",62.1,5,83],[16,"Oregon","3-1",61.8,7,86],[17,"Florida","4-1",61.3,3,90],[18,"Houston","4-1",61.3,7,91],[19,"Utah","4-0",61.3,9,101],[20,"Missouri","4-1",60.4,6,92],[21,"Wisconsin","4-1",60.2,8,98],[22,"Duke","4-0",60.2,10,95],[23,"Boise State","4-1",60.1,8,87],[24,"USC","5-1",59.3,9,95],[25,"Kentucky","4-1",59.3,11,96]];
+const MAX = 110;
+const pct = v => ((v - 1) / (MAX - 1) * 100).toFixed(2) + "%";
+const tb = document.getElementById("poll");
+tb.innerHTML = POLL.map(([r, t, rec, s, lo, hi]) => `
+  <tr>
+    <td class="rk">${r}</td><td class="tm">${t}</td><td class="rec">${rec}</td><td class="sc">${s.toFixed(1)}</td>
+    <td class="rng"><div class="track" title="Rank range ${lo}–${hi}">
+      <div class="bg"></div>
+      <div class="band" style="left:${pct(lo)};width:calc(${pct(hi)} - ${pct(lo)})"></div>
+      <div class="dot" style="left:${pct(r)}"></div>
+    </div></td>
+  </tr>`).join("");
+document.getElementById("axis").innerHTML = [1, 25, 50, 75, 100].map(v => `<span style="left:${pct(v)}">${v}</span>`).join("");
+if (window.renderMathInElement) {
+  renderMathInElement(document.body, { delimiters: [{ left: "$$", right: "$$", display: true }], throwOnError: false });
+}
+</script>
+</body>
+</html>
