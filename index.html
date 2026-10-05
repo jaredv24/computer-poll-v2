@@ -165,18 +165,24 @@ picture.lg { width: 20px; height: 20px; }
 .pg { display: grid; grid-template-columns: 74px minmax(0, 1fr) 200px 130px; gap: 6px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
 .pg .when { font: 600 0.78rem/1.25 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .pg .teams { display: grid; gap: 4px; min-width: 0; }
-.pg .side { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.pg .side { display: grid; grid-template-columns: 20px 32px 20px minmax(0, 1fr) auto; column-gap: 6px; align-items: center; }
+.pg .side .at { color: var(--muted); font-size: 0.9rem; }
+.pg .side .rk { font: 600 0.78rem/1 var(--mono); color: var(--muted); }
+.pg .side picture.lg, .pg .side .lg-none { margin: 0; }
 .pg .side .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.pg .side .nm .rk { font: 600 0.78rem/1 var(--mono); color: var(--muted); margin-right: 5px; }
-.pg .side .nm .at { color: var(--muted); font-weight: 400; margin-right: 4px; }
 .pg .side .sc { font: 600 1.05rem/1 var(--mono); }
 .pg .side.fav .sc { color: var(--turf); }
 .pg .side.lost .nm, .pg .side.lost .sc { color: var(--muted); font-weight: 400; }
 .pg .wp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; width: 200px; min-width: 0; }
-.pg .wp .bar, .pg .wp .lab { width: 100%; }
+.pg .wp .barrow, .pg .wp .lab { width: 100%; }
 .pg .line { min-width: 0; }
-.pg .wp .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--rule); }
-.pg .wp .bar i { display: block; height: 100%; }
+.pg .wp .barrow { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pg .wp .bar { flex: 1 1 auto; min-width: 0; display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: var(--rule); }
+.pg .wp .out { font: 600 0.78rem/1 var(--mono); color: var(--muted); flex: none; }
+.pg .wp .bar i { display: flex; align-items: center; height: 100%; font: 700 0.75rem/1 var(--mono); font-style: normal; overflow: hidden; white-space: nowrap; }
+.pg .wp .bar i:first-child { justify-content: flex-start; padding-left: 6px; }
+.pg .wp .bar i:last-child { justify-content: flex-end; padding-right: 6px; }
+.pg .wp .bar i:empty { padding: 0; }
 .pg .wp .lab { display: flex; justify-content: space-between; gap: 8px; font: 400 0.78rem/1.2 var(--mono); color: var(--muted); }
 .pg .wp .lab span { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pg .wp .lab span + span { text-align: right; }
@@ -189,7 +195,9 @@ picture.lg { width: 20px; height: 20px; }
 .nextgame { border: 1px solid var(--rule); border-left: 3px solid var(--turf); background: var(--panel); border-radius: 4px; padding: 12px 14px; display: grid; gap: 4px; }
 .nextgame b { font-family: var(--display); font-size: 1.15rem; letter-spacing: 0.02em; }
 @media (max-width: 820px) {
-  .pg { grid-template-columns: minmax(0, 1fr) 130px; gap: 8px 12px; }
+  .pg { grid-template-columns: minmax(0, 1fr) 104px; gap: 8px 10px; }
+  .pg .side { grid-template-columns: 16px 26px 20px minmax(0, 1fr) auto; column-gap: 5px; }
+  .pg .side .nm { white-space: normal; overflow: visible; line-height: 1.25; }
   .pg .line { font-size: 0.95rem; }
   .pg .when { grid-column: 1 / -1; }
   .pg .wp { grid-column: 1 / -1; grid-row: 3; width: 100%; }
@@ -561,6 +569,11 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     const m = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
     return m ? "#" + m.slice(0, 3).map(v => (+v).toString(16).padStart(2, "0")).join("") : "#ffffff";
   }
+  function textOn(col) {
+    if (!col.startsWith("#")) return "var(--bg)";
+    const [r, g, b] = hex2rgb(col).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#111611" : "#ffffff";
+  }
   function barColors(home, away) {
     const bg = pageBg(), fallback = ["var(--turf)", "var(--seg3)"];
     const opts = n => { const t = TEAMS[n]; return t ? [t.color, t.alt].filter(Boolean).filter(c => cdist(c, bg) > 55) : []; };
@@ -801,7 +814,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     const rk = r => r && r <= 25 ? `<span class="rk">#${r}</span>` : "";
     const aWon = done && g.aFinal > g.hFinal, hWon = done && g.hFinal > g.aFinal;
     const side = (nm, fcs, r, proj, fin, fav, won, lost, at) => `
-      <div class="side ${fav && !done ? "fav" : ""} ${lost ? "lost" : ""}"><span class="nm">${at ? `<span class="at">${at}</span>` : ""}${rk(r)}${tnm(nm, fcs)}</span>
+      <div class="side ${fav && !done ? "fav" : ""} ${lost ? "lost" : ""}"><span class="at">${at || ""}</span><span class="rk">${r && r <= 25 ? "#" + r : ""}</span>${logo(nm)}<span class="nm">${fcs ? esc(nm) : `<button type="button" class="tlink" data-team="${esc(nm)}">${esc(nm)}</button>`}</span>
       <span class="sc">${done ? fin : proj}</span></div>`;
     const right = done
       ? `<div class="line"><span class="mark ${g.correct ? "ok" : g.correct === false ? "no" : ""}">${g.correct ? "✓ Right" : g.correct === false ? "✗ Wrong" : "–"}</span><small>Projected ${g.aScore}-${g.hScore} · ${lineText(g)} · off by ${g.miss}</small></div>`
@@ -812,8 +825,12 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
         ${side(g.away, g.awayFCS, g.aRank, g.aScore, g.aFinal, !homeFav, aWon, hWon, "")}
         ${side(g.home, g.homeFCS, g.hRank, g.hScore, g.hFinal, homeFav, hWon, aWon, g.neutral ? "vs" : "at")}
       </div>
-      ${done ? "" : (() => { const [hc, ac] = barColors(g.home, g.away); return `<div class="wp" title="Win chance"><div class="bar"><i style="width:${ap}%;background:${ac}"></i><i style="width:${hp}%;background:${hc}"></i></div>`; })() + `
-        <div class="lab"><span>${esc(g.away)} ${ap}%</span><span>${hp}% ${esc(g.home)}</span></div></div>`}
+      ${done ? "" : (() => {
+        const [hc, ac] = barColors(g.home, g.away);
+        const seg = (pct, col, side) => `<i style="width:${pct}%;background:${col};color:${textOn(col)}">${pct >= 16 ? pct + "%" : ""}</i>`;
+        return `<div class="wp" title="Win chance: ${esc(g.away)} ${ap}%, ${esc(g.home)} ${hp}%"><div class="barrow"><div class="bar">${seg(ap, ac)}${seg(hp, hc)}</div></div>
+        <div class="lab"><span>${esc(g.away)}${ap < 16 ? " " + ap + "%" : ""}</span><span>${hp < 16 ? hp + "% " : ""}${esc(g.home)}</span></div></div>`;
+      })()}
       ${right}
     </li>`;
   }
