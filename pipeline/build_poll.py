@@ -32,6 +32,13 @@ CAL_A, CAL_H = 0.81, 0.34
 WEIGHTS = dict(SOR=0.55, QW=0.20, LQ=0.15, EFF=0.10)
 EFF_RIDGE = 4.0          # shrinkage toward 0 for opponent-adjusted efficiency, in games
 
+# "Prove it" carryover from last season's final rating. It fades to zero by week 6.
+CARRY_REGRESS = 2 / 3    # last season's rating is pulled a third of the way back to average
+def carry_weight(week):   # share of the score from last season
+    return round(max(0.0, 0.5 - 0.1 * (week - 1)), 2)
+def anchor_games(week):   # ghost games pulling this season's rating toward last season's
+    return max(0.0, 4.0 * (1 - (week - 1) / 5))
+
 
 # ---------------------------------------------------------------- data
 def fetch(url, headers=None, dest=None):
@@ -64,7 +71,7 @@ def load_season(y, refresh=False):
     d["order"] = d.week + np.where(d.post, 20, 0)
     d["hp"], d["ap"] = d.home_points.astype(int), d.away_points.astype(int)
     d = d[d.hp != d.ap]
-    cols = ["game_id", "week", "post", "home", "away", "hp", "ap", "neutral", "order"]
+    cols = ["game_id", "week", "post", "home", "away", "home_team", "away_team", "hp", "ap", "neutral", "order"]
     return d[cols].reset_index(drop=True), sorted(fbs), conf
 
 
@@ -77,8 +84,12 @@ def cfbd(path, **params):
 
 
 # ---------------------------------------------------------------- Step 1: rating
-def fit_ratings(g, teams, fcs_prior=()):
-    """Win/loss Bradley-Terry, one ghost win + one ghost loss per team vs a 0-rated team."""
+def fit_ratings(g, teams, fcs_prior=(), anchor=None):
+    """Win/loss Bradley-Terry, one ghost win + one ghost loss per team vs a 0-rated team.
+
+    anchor: (targets by team, weight) adds `weight` ghost win/loss pairs per team against
+    a phantom rated at that team's target, pulling early-season ratings toward last season.
+    """
     idx = {t: i for i, t in enumerate(list(teams) + [FCS])}
     n = len(idx)
     hi, ai = g.home.map(idx).values, g.away.map(idx).values
@@ -87,6 +98,8 @@ def fit_ratings(g, teams, fcs_prior=()):
     pr = np.array(fcs_prior, dtype=float).reshape(-1, 3)
     sgn = np.where(y, 1.0, -1.0)
     sgn2 = np.where(pr[:, 1] == 1, 1.0, -1.0)
+    aw = anchor[1] if anchor else 0.0
+    tgt = np.array([anchor[0].get(t, 0.0) for t in idx]) if anchor else np.zeros(n)
 
     def f(x):
         r, h = x[:n], x[n]
@@ -101,6 +114,10 @@ def fit_ratings(g, teams, fcs_prior=()):
             nll += -log_expit(s2).sum()
             gr[-1] -= gs2.sum()
             gh += (gs2 * pr[:, 2]).sum()
+        if aw > 0:
+            dlt = r - tgt
+            nll += -aw * (log_expit(dlt) + log_expit(-dlt)).sum()
+            gr += aw * (expit(dlt) - expit(-dlt))
         return nll, np.append(gr, gh)
 
     res = minimize(f, np.append(np.zeros(n), 0.3), jac=True, method="L-BFGS-B")
@@ -162,8 +179,8 @@ def adjusted_efficiency(adv, teams, upto_week):
 
 # ---------------------------------------------------------------- components
 def team_games(g):
-    a = pd.DataFrame(dict(team=g.home, opp=g.away, pf=g.hp, pa=g.ap, loc=np.where(g.neutral, 0, 1)))
-    b = pd.DataFrame(dict(team=g.away, opp=g.home, pf=g.ap, pa=g.hp, loc=np.where(g.neutral, 0, -1)))
+    a = pd.DataFrame(dict(game_id=g.game_id, week=g.week, team=g.home, opp=g.away, opp_name=g.away_team, pf=g.hp, pa=g.ap, loc=np.where(g.neutral, 0, 1)))
+    b = pd.DataFrame(dict(game_id=g.game_id, week=g.week, team=g.away, opp=g.home, opp_name=g.home_team, pf=g.ap, pa=g.hp, loc=np.where(g.neutral, 0, -1)))
     t = pd.concat([a, b], ignore_index=True)
     t = t[t.team != FCS]
     t["won"] = t.pf > t.pa
@@ -179,7 +196,7 @@ def poisson_binomial(p):
     return dist
 
 
-def components(g, teams, rat, eff):
+def components(g, teams, rat, eff, carry=None, carry_w=0.0):
     played = sorted(set(g.home) | set(g.away))
     teams = [t for t in teams if t in played]
     fbs_r = sorted((rat[t] for t in teams), reverse=True)
@@ -195,20 +212,27 @@ def components(g, teams, rat, eff):
                    SOR=float(norm.ppf(np.clip(1 - S, 1e-12, 1 - 1e-12))),
                    QW=float(((1 - s.p[s.won]) ** 2).sum()),
                    LQ=float(-(s.p[~s.won] ** 2).mean()) if L else 0.0,
-                   rating=rat[t])
+                   rating=rat[t], expW=float(s.p.sum()), pMatch=float(dist[W:].sum()))
         if eff:
             oe, de = eff["ppa"].get(t, (np.nan, np.nan))
             osr, dsr = eff["successRate"].get(t, (np.nan, np.nan))
             row.update(EFF=oe - de, offEPA=oe, defEPA=de, offSR=osr, defSR=dsr)
+        if carry and carry_w > 0:
+            row["PRIOR"] = carry.get(t, carry.get(FCS, 0.0))
         rows.append(row)
     c = pd.DataFrame(rows).set_index("team")
     w = {k: v for k, v in WEIGHTS.items() if k in c and c[k].notna().any()}
     tot = sum(w.values())
+    if "PRIOR" in c:
+        w = {k: v / tot * (1 - carry_w) for k, v in w.items()}
+        w["PRIOR"] = carry_w
+        tot = 1.0
     c["score"] = 0.0
     for k, v in w.items():
-        z = (c[k] - c[k].mean()) / c[k].std()
-        c["score"] += (v / tot) * z.fillna(0)
-    return c
+        z = ((c[k] - c[k].mean()) / c[k].std()).fillna(0)
+        c["pts_" + k] = 10 * (v / tot) * z      # contribution on the 50 + 10 x Score display scale
+        c["score"] += (v / tot) * z
+    return c, tg
 
 
 def h2h_order(c, g):
@@ -292,19 +316,28 @@ def build(season):
         g, teams, _ = load_season(y)
         hist.append((g, fit_ratings(g, teams, fcs_prior_games(hist))))
     prior = fcs_prior_games(hist)
+    last = hist[-1][1]
+    last_fbs = sorted((t for t in last if t != FCS), key=lambda t: -last[t])
+    last_rank = {t: i + 1 for i, t in enumerate(last_fbs)}
+    carry = {t: CARRY_REGRESS * v for t, v in last.items()}   # FCS key covers teams new to FBS
 
     g, teams, conf = load_season(season, refresh=True)
     reg = g[~g.post]
     adv = attach_location(load_advanced(season), g)
     ap = load_ap(season)
 
+    os.makedirs(os.path.join(ROOT, "data"), exist_ok=True)
     weeks_out = []
     prev_rank = {}
     for wk in sorted(reg.week.unique()):
         gw = reg[reg.week <= wk]
-        rat = fit_ratings(gw, teams, prior)
+        wk = int(wk)
+        cw = carry_weight(wk)
+        targets = {t: carry.get(t, carry[FCS]) for t in teams}
+        targets[FCS] = last[FCS]
+        rat = fit_ratings(gw, teams, prior, (targets, anchor_games(wk)))
         eff = adjusted_efficiency(adv, teams, wk)
-        c = components(gw, teams, rat, eff)
+        c, tg = components(gw, teams, rat, eff, carry, cw)
         order = h2h_order(c, gw)
         # AP poll released after this week's games carries the next week number in CFBD
         ap_wk = ap.get(int(wk) + 1, {})
@@ -317,7 +350,27 @@ def build(season):
                              eff=r3(r.get("EFF")), offEPA=r3(r.get("offEPA")), defEPA=r3(r.get("defEPA")),
                              offSR=r3(r.get("offSR")), defSR=r3(r.get("defSR")),
                              ap=ap_wk.get(t), prev=prev_rank.get(t)))
-        prev_rank = {x["team"]: x["rank"] for x in rows}
+        rank_now = {x["team"]: x["rank"] for x in rows}
+        for x in rows:
+            r = c.loc[x["team"]]
+            x["expW"], x["pMatch"] = r3(r.expW), r3(r.pMatch)
+            x["lastRank"] = last_rank.get(x["team"])
+            x["pts"] = {k[4:]: round(float(r[k]), 2) for k in c.columns if k.startswith("pts_")}
+        ppa = {}
+        if adv is not None and not adv.empty:
+            for a in adv.itertuples():
+                if pd.notna(a.ppa) and pd.notna(a.game_id):
+                    ppa.setdefault(int(a.game_id), {})[a.team] = a.ppa
+        games = {}
+        for r in tg.sort_values("week").itertuples():
+            by_team = ppa.get(int(r.game_id), {})
+            allowed = [v for k, v in by_team.items() if k != r.team]
+            games.setdefault(r.team, []).append([
+                int(r.week), r.opp_name, int(r.loc), int(r.pf), int(r.pa), round(float(r.p), 3),
+                rank_now.get(r.opp), r3(by_team.get(r.team)), r3(allowed[0]) if allowed else None, r.opp == FCS])
+        with open(os.path.join(ROOT, "data", f"games-{season}-w{int(wk)}.json"), "w") as f:
+            json.dump(games, f, separators=(",", ":"))
+        prev_rank = rank_now
         summary = {}
         if ap_wk:
             ours = {x["team"]: x["rank"] for x in rows}
@@ -325,7 +378,7 @@ def build(season):
             in_both = [t for t in ap_wk if t in ours]
             summary = dict(apWeek=int(wk) + 1, overlap=len(top25 & set(ap_wk)),
                            spearman=r3(spearmanr([ap_wk[t] for t in in_both], [ours[t] for t in in_both])[0]) if len(in_both) > 2 else None)
-        weeks_out.append(dict(week=int(wk), games=int(len(gw)), teams=rows, vsAP=summary))
+        weeks_out.append(dict(week=wk, games=int(len(gw)), carry=cw, teams=rows, vsAP=summary))
         print(f"week {wk}: {len(rows)} teams ranked, AP week {int(wk) + 1}: {'yes' if ap_wk else 'no'}", flush=True)
 
     out = dict(season=season, updated=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),

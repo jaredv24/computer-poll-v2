@@ -100,17 +100,6 @@ input[type="search"] { width: 220px; max-width: 100%; }
 .kpi { border-top: 2px solid var(--turf); padding-top: 8px; display: grid; gap: 2px; }
 .kpi b { font: 700 1.9rem/1 var(--display); }
 .kpi span { font-size: 0.88rem; color: var(--muted); }
-.vs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-@media (max-width: 640px) { .vs { grid-template-columns: 1fr; } }
-.vs h3 { font-size: 1.15rem; margin-bottom: 8px; }
-.vs ol { list-style: none; margin: 0; padding: 0; display: grid; }
-.vs li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--rule); font-size: 0.97rem; }
-.vs li .r { font: 700 1.1rem/1 var(--display); color: var(--turf); }
-.vs li .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.vs li .o { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
-.vs li.miss .t { color: var(--pylon); }
-.vs li.miss .o { color: var(--pylon); }
-.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--pylon); margin-right: 6px; vertical-align: middle; }
 .spark { width: 100%; height: 120px; display: block; }
 
 /* Full table */
@@ -157,6 +146,80 @@ ul.tight { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
 .checks li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
 .checks li::before { content: ""; width: 16px; height: 16px; border: 2px solid var(--pylon); border-radius: 3px; margin-top: 5px; }
 footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92rem; color: var(--muted); display: grid; gap: 8px; }
+
+/* Combined Computer Poll + AP list */
+.cl { list-style: none; margin: 0; padding: 0; display: grid; }
+.cl li { display: grid; grid-template-columns: 40px minmax(0, 1fr) 48px 56px minmax(120px, 200px) 64px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 0.97rem; }
+.cl .r { font: 700 1.25rem/1 var(--display); color: var(--turf); }
+.cl .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.cl .rec { font: 400 0.84rem/1 var(--mono); color: var(--muted); }
+.cl .apr { font: 600 0.84rem/1 var(--mono); text-align: center; }
+.cl .apr small { display: block; font: 600 0.62rem/1.2 var(--display); letter-spacing: 0.1em; color: var(--muted); }
+.cl .gap { font: 600 0.82rem/1 var(--mono); text-align: right; white-space: nowrap; }
+.cl .gap.cp { color: var(--turf); } .cl .gap.ap { color: var(--pylon); } .cl .gap.same { color: var(--muted); }
+.gbar { position: relative; height: 12px; }
+.gbar::before { content: ""; position: absolute; left: 50%; top: -5px; bottom: -5px; width: 1px; background: var(--muted); }
+.gbar i { position: absolute; top: 0; height: 12px; border-radius: 2px; }
+.gbar i.cp { left: 50%; background: var(--turf); }
+.gbar i.ap { right: 50%; background: var(--pylon); }
+.gbar i.nr { background: repeating-linear-gradient(90deg, var(--turf) 0 6px, transparent 6px 9px); }
+.cl-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); }
+.cl-legend .sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.cl-legend .sw.ap { background: var(--pylon); } .cl-legend .sw.cp { background: var(--turf); }
+@media (max-width: 600px) {
+  .cl li { grid-template-columns: 34px minmax(0, 1fr) 46px 58px; }
+  .cl .rec { display: none; }
+  .cl .gbar { grid-column: 2 / 4; grid-row: 2; }
+  .cl .gap { grid-row: 2; grid-column: 4; }
+}
+
+/* Team links + panel */
+.tlink { all: unset; cursor: pointer; font: inherit; color: inherit; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; text-decoration-thickness: 2px; }
+.tlink:hover { text-decoration-color: var(--turf); color: var(--turf); }
+.tlink:focus-visible { outline: 2px solid var(--pylon); outline-offset: 2px; border-radius: 2px; }
+dialog.team { width: min(860px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 1px solid var(--rule); border-radius: 8px; background: var(--bg); color: var(--ink); }
+dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
+.tp { display: grid; gap: 26px; padding: 22px 22px 28px; }
+.tp-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 16px; align-items: start; position: sticky; top: 0; background: var(--bg); padding: 22px 22px 14px; margin: -22px -22px 0; border-bottom: 1px solid var(--rule); z-index: 2; }
+.tp-rank { font: 700 3.2rem/0.9 var(--display); color: var(--turf); grid-row: span 2; }
+.tp-name { font: 700 2rem/1 var(--display); text-transform: uppercase; }
+.tp-meta { color: var(--muted); font-size: 0.95rem; grid-column: 2; }
+.tp-close { all: unset; cursor: pointer; grid-row: 1; grid-column: 3; font: 600 0.8rem/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border: 1px solid var(--rule); border-radius: 4px; }
+.tp-close:hover { color: var(--ink); }
+.tp-close:focus-visible { outline: 2px solid var(--pylon); }
+.tp h3 { font-size: 1.2rem; margin-bottom: 4px; }
+.tp .sub { color: var(--muted); font-size: 0.93rem; }
+.why { display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.why-row { display: grid; grid-template-columns: minmax(0, 1fr) 180px 64px; gap: 8px 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.why-row > div > b { font-family: var(--display); font-size: 1.1rem; letter-spacing: 0.02em; text-transform: uppercase; }
+.why-row p { font-size: 0.95rem; color: var(--muted); margin-top: 2px; }
+.why-row p b { color: var(--ink); font-weight: 600; }
+.why-row .pts { font: 600 1rem/1 var(--mono); text-align: right; }
+.why-row.total { border-bottom: 2px solid var(--ink); }
+.why-row.total .pts { font-size: 1.15rem; }
+.dbar { position: relative; height: 14px; }
+.dbar::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--muted); }
+.dbar i { position: absolute; top: 0; height: 14px; border-radius: 2px; }
+.dbar i.pos { left: 50%; background: var(--turf); }
+.dbar i.neg { right: 50%; background: var(--pylon); }
+@media (max-width: 600px) { .why-row .sp { display: none; } .why-row { grid-template-columns: minmax(0, 1fr) 64px; } .why-row .dbar { grid-column: 1 / -1; grid-row: 2; } }
+.glog { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 0.93rem; font-variant-numeric: tabular-nums; }
+.glog th { font: 600 0.74rem/1.15 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 8px; border-bottom: 2px solid var(--ink); vertical-align: bottom; }
+.glog td { padding: 8px; border-bottom: 1px solid var(--rule); vertical-align: middle; white-space: nowrap; }
+.glog td.n { font-family: var(--mono); font-size: 0.85rem; text-align: right; }
+.glog th.r { text-align: right; }
+.res-w { color: var(--up); font-weight: 600; } .res-l { color: var(--down); font-weight: 600; }
+.chance { display: grid; grid-template-columns: 70px 44px; gap: 8px; align-items: center; }
+.chance .track2 { height: 8px; background: var(--rule); border-radius: 4px; overflow: hidden; }
+.chance .track2 i { display: block; height: 100%; background: var(--seg3); }
+.chance span { font: 400 0.82rem/1 var(--mono); text-align: right; }
+.effect-pos { color: var(--up); } .effect-neg { color: var(--down); } .effect-0 { color: var(--muted); }
+.orank { font: 600 0.75rem/1 var(--mono); color: var(--muted); margin-right: 4px; }
+.effgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.effgrid div { border-top: 2px solid var(--seg4); padding-top: 8px; display: grid; gap: 2px; }
+.effgrid b { font: 700 1.7rem/1 var(--display); }
+.effgrid span { font-size: 0.88rem; color: var(--muted); }
+.explain { font-size: 0.93rem; color: var(--muted); max-width: 680px; }
 </style>
 </head>
 <body>
@@ -165,7 +228,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
 <header>
   <div class="eyebrow"><b>Draft v2.0</b> &nbsp;·&nbsp; <span id="updated">Loading…</span></div>
   <h1>The Computer Poll</h1>
-  <p class="lead col">Every FBS team, ranked each week on what it has done this season: who it beat, who it lost to, and how efficiently it played. No preseason priors, recruiting data or predictions. The AP Top 25 is shown alongside for comparison.</p>
+  <p class="lead col">Every FBS team, ranked each week on who it beat, who it lost to, and how efficiently it played. Teams start from where they finished last season and have to prove it: that carryover counts half the score in week 1 and fades to nothing by week 6. The AP Top 25 is shown alongside for comparison.</p>
   <div class="wbar" role="img" aria-label="Strength of Record 55%, Quality Wins 20%, Loss Quality 15%, Efficiency 10%">
     <div class="s1">SOR 55%</div><div class="s2">QW 20%</div><div class="s3">LQ 15%</div><div class="s4">EFF 10%</div>
   </div>
@@ -186,11 +249,13 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
   <div class="panel">
     <h2 id="ap-h">Computer Poll vs AP Top 25</h2>
     <div class="kpis" id="kpis"></div>
-    <div class="vs">
-      <div><h3>Computer Poll</h3><ol id="ours"></ol></div>
-      <div><h3 id="ap-title">AP Top 25</h3><ol id="theirs"></ol></div>
+    <p class="small muted" id="ap-title"></p>
+    <div class="cl-legend small" aria-hidden="true"><span><i class="sw ap"></i>AP ranks them higher</span><span><i class="sw cp"></i>Computer Poll ranks them higher</span></div>
+    <ol class="cl" id="combined"></ol>
+    <div id="aponly-wrap" hidden>
+      <h3 style="font-size:1.1rem;margin-bottom:6px">In the AP Top 25, outside ours</h3>
+      <ol class="cl" id="aponly"></ol>
     </div>
-    <p class="small muted"><span class="legend-dot"></span>Team is in one Top 25 but not the other. The small number is the team's rank in the other poll.</p>
     <div id="trend-wrap" hidden>
       <h3 style="font-size:1.1rem;margin-bottom:6px">Agreement by week</h3>
       <svg class="spark" id="trend" role="img" aria-label="Number of shared Top 25 teams by week"></svg>
@@ -215,6 +280,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
         <th data-k="w"><button>W-L</button></th>
         <th data-k="score"><button>Score</button></th>
         <th data-k="ap"><button>AP</button></th>
+        <th data-k="lastRank"><button>Last yr</button></th>
         <th class="grp" data-k="sor"><button>SOR</button></th>
         <th data-k="qw"><button>QW</button></th>
         <th data-k="lq"><button>LQ</button></th>
@@ -298,6 +364,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
         <h3>The Score</h3>
         <div class="eq">$$\text{Score} = 0.55\,z_{\text{SOR}} + 0.20\,z_{\text{QW}} + 0.15\,z_{\text{LQ}} + 0.10\,z_{\text{EFF}}$$</div>
         <p>Each component is a z-score across FBS teams, displayed as 50 + 10 × Score. If two teams played and sit within half the median gap between adjacent top-40 teams, the head-to-head winner ranks ahead.</p>
+        <p><b>Last-season carryover.</b> Each team's final rating from last season, pulled a third of the way back to average, is blended in early: 50% of the score in week 1, then 40%, 30%, 20% and 10%, and nothing from week 6 on. Early opponent ratings also lean on last season, so an early win over a team that was good last year counts, and that pull fades on the same schedule. Teams new to FBS start from last season's average FCS team.</p>
         <p>The poll is rebuilt after every week of games from all results to date. The AP comparison for a week uses the AP poll released after that week's games.</p>
       </div>
     </article>
@@ -343,6 +410,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
 </footer>
 </main>
 
+<dialog class="team" id="team-dlg" aria-labelledby="tp-name"><div class="tp" id="tp"></div></dialog>
 <script src="vendor/katex/katex.min.js"></script>
 <script src="vendor/katex/contrib/auto-render.min.js"></script>
 <script>
@@ -382,6 +450,8 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
     if (h && DATA.weeks.some(w => w.week === +h[1])) start = +h[1];
     show(start);
     drawTrend();
+    const th = decodeURIComponent(location.hash.slice(1));
+    if (th && !/^week\d+$/.test(th) && cur.teams.some(t => t.team === th)) openTeam(th);
   }
 
   function show(wk) {
@@ -395,18 +465,32 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
   function renderVs() {
     const t25 = cur.teams.slice(0, 25);
     const apList = cur.teams.filter(t => t.ap != null).sort((a, b) => a.ap - b.ap);
-    const apSet = new Set(apList.map(t => t.team));
-    const rankOf = Object.fromEntries(cur.teams.map(t => [t.team, t.rank]));
-    $("ours").innerHTML = t25.map(t => {
-      const miss = apList.length && !apSet.has(t.team);
-      return `<li class="${miss ? "miss" : ""}"><span class="r">${t.rank}</span><span class="t">${esc(t.team)}</span><span class="o">${t.w}-${t.l}${apList.length ? " · AP " + (t.ap ?? "NR") : ""}</span></li>`;
+    const hasAP = apList.length > 0;
+    const MAXG = 20;
+    const gapCell = (cp, ap) => {
+      if (ap == null) return { bar: `<div class="gbar"><i class="cp nr" style="width:50%"></i></div>`, lab: `<span class="gap cp">AP: NR</span>` };
+      const g = ap - cp;   // positive: Computer Poll has them higher
+      const w = (Math.min(Math.abs(g), MAXG) / MAXG * 50).toFixed(1);
+      if (g === 0) return { bar: `<div class="gbar"></div>`, lab: `<span class="gap same">Same</span>` };
+      return g > 0
+        ? { bar: `<div class="gbar"><i class="cp" style="width:${w}%"></i></div>`, lab: `<span class="gap cp">CP +${g}</span>` }
+        : { bar: `<div class="gbar"><i class="ap" style="width:${w}%"></i></div>`, lab: `<span class="gap ap">AP +${-g}</span>` };
+    };
+    const link = t => `<button type="button" class="tlink" data-team="${esc(t.team)}">${esc(t.team)}</button>`;
+    $("combined").innerHTML = t25.map(t => {
+      const gc = hasAP ? gapCell(t.rank, t.ap) : { bar: "<div></div>", lab: "" };
+      return `<li><span class="r">${t.rank}</span><span class="t">${link(t)}</span><span class="rec">${t.w}-${t.l}</span>
+        <span class="apr">${hasAP ? (t.ap ?? "NR") : "–"}<small>AP</small></span>${gc.bar}${gc.lab}</li>`;
     }).join("");
-    if (apList.length) {
-      $("ap-title").textContent = "AP Top 25, week " + cur.vsAP.apWeek + " poll";
-      $("theirs").innerHTML = apList.map(t => {
-        const miss = t.rank > 25;
-        return `<li class="${miss ? "miss" : ""}"><span class="r">${t.ap}</span><span class="t">${esc(t.team)}</span><span class="o">${t.w}-${t.l} · CP ${rankOf[t.team]}</span></li>`;
-      }).join("");
+    const apOnly = apList.filter(t => t.rank > 25);
+    $("aponly-wrap").hidden = !apOnly.length;
+    $("aponly").innerHTML = apOnly.map(t => {
+      const gc = gapCell(t.rank, t.ap);
+      return `<li><span class="r">${t.rank}</span><span class="t">${link(t)}</span><span class="rec">${t.w}-${t.l}</span>
+        <span class="apr">${t.ap}<small>AP</small></span>${gc.bar}${gc.lab}</li>`;
+    }).join("");
+    if (hasAP) {
+      $("ap-title").textContent = `Our Top 25 with each team's rank in the AP poll released after week ${cur.week}'s games. The bar shows how far apart the two polls are; it tops out at ${MAXG} places.`;
       const gaps = apList.map(t => ({ t: t.team, g: t.rank - t.ap })).sort((a, b) => Math.abs(b.g) - Math.abs(a.g));
       const big = gaps[0];
       $("kpis").innerHTML = `
@@ -414,9 +498,11 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
         <div class="kpi"><b>${cur.vsAP.spearman == null ? "–" : cur.vsAP.spearman.toFixed(2)}</b><span>Rank correlation on AP-ranked teams</span></div>
         <div class="kpi"><b>${esc(big.t)}</b><span>Biggest gap: AP ${big.g > 0 ? "higher" : "lower"} by ${Math.abs(big.g)} places</span></div>`;
     } else {
-      $("ap-title").textContent = "AP Top 25";
-      $("theirs").innerHTML = `<li><span class="r">–</span><span class="t muted">Not available for this week</span><span class="o"></span></li>`;
+      $("ap-title").textContent = "The AP poll for this week is not available yet.";
       $("kpis").innerHTML = `<div class="kpi"><b>${cur.teams.length}</b><span>FBS teams ranked</span></div><div class="kpi"><b>${cur.games}</b><span>Games through week ${cur.week}</span></div>`;
+    }
+    if (cur.carry > 0) {
+      $("kpis").innerHTML += `<div class="kpi"><b>${Math.round(cur.carry * 100)}%</b><span>Of this week's score carried over from last season</span></div>`;
     }
   }
 
@@ -434,11 +520,12 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
       <tr data-team="${esc(t.team.toLowerCase())}" data-conf="${esc(t.conf)}">
         <td class="rk">${t.rank}</td>
         <td class="n ${t.move > 0 ? "up" : t.move < 0 ? "down" : ""}">${t.move == null ? "–" : t.move > 0 ? "▲" + t.move : t.move < 0 ? "▼" + -t.move : "="}</td>
-        <td class="l tm">${esc(t.team)}</td>
+        <td class="l tm"><button type="button" class="tlink" data-team="${esc(t.team)}">${esc(t.team)}</button></td>
         <td class="l cf">${esc(t.conf)}</td>
         <td class="n">${t.w}-${t.l}</td>
         <td class="n">${t.score.toFixed(1)}</td>
         <td>${t.ap == null ? "" : `<span class="ap-badge">${t.ap}</span>`}</td>
+        <td class="n">${t.lastRank ?? "–"}</td>
         <td class="n grp">${fmt(t.sor, 2, true)}</td>
         <td class="n">${fmt(t.qw, 2)}</td>
         <td class="n">${fmt(t.lq, 2)}</td>
@@ -480,12 +567,129 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
     const th = e.target.closest("th"); if (!th) return;
     const k = th.dataset.k;
     if (k === sortKey) sortDir = -sortDir;
-    else { sortKey = k; sortDir = ["rank", "team", "conf", "ap", "defEPA", "defSR"].includes(k) ? 1 : -1; }
+    else { sortKey = k; sortDir = ["rank", "team", "conf", "ap", "lastRank", "defEPA", "defSR"].includes(k) ? 1 : -1; }
     try { localStorage.setItem("cp-sort", JSON.stringify([sortKey, sortDir])); } catch (e) {}
     renderRows();
   });
   $("q").addEventListener("input", filter);
   $("conf").addEventListener("change", filter);
+
+  // ---------------- team panel
+  const gamesCache = {};
+  async function gamesFor(week) {
+    if (!gamesCache[week]) {
+      gamesCache[week] = fetch(`data/games-${DATA.season}-w${week}.json`, { cache: "no-cache" }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+    }
+    return gamesCache[week];
+  }
+  const ord = n => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
+  const pc = v => Math.round(v * 100) + "%";
+  const site = l => l === 1 ? "vs" : l === -1 ? "at" : "vs (N)";
+  const signed = (v, d = 1) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(d);
+  function rankOn(key, team, asc) {
+    const arr = cur.teams.filter(t => t[key] != null).sort((a, b) => asc ? a[key] - b[key] : b[key] - a[key]);
+    const i = arr.findIndex(t => t.team === team);
+    return i < 0 ? null : i + 1;
+  }
+
+  async function openTeam(name) {
+    const t = cur.teams.find(x => x.team === name);
+    if (!t) return;
+    const games = (await gamesFor(cur.week))[name] || [];
+    const n = cur.teams.length;
+    const wins = games.filter(g => g[3] > g[4]), losses = games.filter(g => g[3] < g[4]);
+    const best = [...wins].sort((a, b) => a[5] - b[5]).slice(0, 2);
+    const worst = [...losses].sort((a, b) => b[5] - a[5])[0];
+    const oppLabel = g => g[9] ? `${esc(g[1])} (FCS)` : esc(g[1]);
+    const where = g => g[2] === -1 ? "on the road" : g[2] === 0 ? "at a neutral site" : "at home";
+
+    const lines = [];
+    // Strength of Record
+    if (t.expW != null) {
+      const share = t.pMatch < 0.01 ? "fewer than 1%" : t.pMatch > 0.99 ? "nearly all" : pc(t.pMatch);
+      lines.push({ k: "SOR", name: "Strength of Record", text: `A typical Top-25 team would expect about <b>${t.expW.toFixed(1)} wins</b> against this schedule. ${esc(name)} has <b>${t.w}</b>. ${share} of Top-25 teams would go ${t.w}-${t.l} or better.` });
+    }
+    lines.push({ k: "QW", name: "Quality Wins", text: best.length ? `Best ${best.length > 1 ? "wins" : "win"}: ${best.map(g => `${oppLabel(g)} ${where(g)}, a game a Top-25 team wins ${pc(g[5])} of the time`).join("; ")}.` : "No wins yet." });
+    lines.push({ k: "LQ", name: "Loss Quality", text: worst ? `Worst loss: ${oppLabel(worst)} ${where(worst)}, a game a Top-25 team wins ${pc(worst[5])} of the time.${losses.length > 1 ? ` Averaged over ${losses.length} losses.` : ""}` : "No losses, so nothing to forgive." });
+    if (t.eff != null) {
+      const ro = rankOn("offEPA", name, false), rd = rankOn("defEPA", name, true);
+      lines.push({ k: "EFF", name: "Efficiency", text: `Offense ranks <b>${ord(ro)}</b> and defense <b>${ord(rd)}</b> of ${n} in points added per play, adjusted for opponents.` });
+    }
+    if ("PRIOR" in (t.pts || {})) {
+      lines.push({ k: "PRIOR", name: "Last Season", text: t.lastRank
+        ? `Finished <b>${ord(t.lastRank)}</b> last season. That carryover counts <b>${Math.round(cur.carry * 100)}%</b> of the score this week and fades to zero by week 6.`
+        : `New to FBS, so it starts from last season's average FCS team. This counts <b>${Math.round(cur.carry * 100)}%</b> of the score this week and fades to zero by week 6.` });
+    }
+    const pts = t.pts || {};
+    const maxAbs = Math.max(4, ...Object.values(pts).map(Math.abs));
+    const bar = v => `<div class="dbar" aria-hidden="true"><i class="${v >= 0 ? "pos" : "neg"}" style="width:${(Math.abs(v) / maxAbs * 50).toFixed(1)}%"></i></div>`;
+    const whyRows = lines.filter(l => l.k in pts).map(l => `
+      <div class="why-row"><div><b>${l.name}</b><p>${l.text}</p></div>${bar(pts[l.k])}<div class="pts">${signed(pts[l.k])}</div></div>`).join("");
+
+    const effect = g => {
+      if (g[3] > g[4]) { const v = (1 - g[5]) ** 2; return `<span class="${v >= 0.05 ? "effect-pos" : "effect-0"}">+${v.toFixed(2)} QW</span>`; }
+      const v = g[5] ** 2; return `<span class="effect-neg">−${v.toFixed(2)} LQ</span>`;
+    };
+    const rows = games.map(g => `
+      <tr>
+        <td class="n" style="text-align:left">${g[0]}</td>
+        <td>${g[6] ? `<span class="orank">#${g[6]}</span>` : ""}${g[9] ? oppLabel(g) : `<button type="button" class="tlink" data-team="${esc(g[1])}">${esc(g[1])}</button>`}</td>
+        <td class="muted">${site(g[2])}</td>
+        <td class="${g[3] > g[4] ? "res-w" : "res-l"}">${g[3] > g[4] ? "W" : "L"} ${g[3]}-${g[4]}</td>
+        <td><div class="chance" title="A Top-25 team wins this game ${pc(g[5])} of the time"><div class="track2"><i style="width:${(g[5] * 100).toFixed(0)}%"></i></div><span>${pc(g[5])}</span></div></td>
+        <td class="n">${effect(g)}</td>
+        <td class="n">${g[7] == null ? "–" : fmt(g[7], 2, true)}</td>
+        <td class="n">${g[8] == null ? "–" : fmt(g[8], 2, true)}</td>
+      </tr>`).join("");
+
+    const effBlock = t.eff == null ? "" : `
+      <div class="stack">
+        <h3>Efficiency</h3>
+        <div class="effgrid">
+          <div><b>${fmt(t.offEPA, 3, true)}</b><span>Offense: points added per play (${ord(rankOn("offEPA", name, false))} of ${n})</span></div>
+          <div><b>${fmt(t.defEPA, 3, true)}</b><span>Defense: points allowed per play (${ord(rankOn("defEPA", name, true))} of ${n}, lower is better)</span></div>
+          <div><b>${pctf(t.offSR)}</b><span>Offensive success rate (${ord(rankOn("offSR", name, false))})</span></div>
+          <div><b>${pctf(t.defSR)}</b><span>Success rate allowed (${ord(rankOn("defSR", name, true))})</span></div>
+        </div>
+        <p class="explain">Points added per play (EPA) measures how much each snap changed a team's expected points. These numbers are adjusted for the quality of each opponent and for home field, with garbage time removed. A play counts as a success if it gains enough yards for its down and distance.</p>
+      </div>`;
+
+    $("tp").innerHTML = `
+      <div class="tp-head">
+        <div class="tp-rank">${t.rank}</div>
+        <div class="tp-name" id="tp-name">${esc(name)}</div>
+        <button type="button" class="tp-close" id="tp-close">Close</button>
+        <div class="tp-meta">${esc(t.conf)} · ${t.w}-${t.l} · Score ${t.score.toFixed(1)}${t.ap ? ` · AP #${t.ap}` : DATA.apAvailable ? " · Unranked in AP" : ""} · Week ${cur.week}</div>
+      </div>
+      <div class="stack">
+        <div><h3>Why ${ord(t.rank)}</h3><p class="sub">Every team starts at 50, the FBS average. Each part of the résumé adds or subtracts points.</p></div>
+        <div class="why">
+          <div class="why-row"><div><b>FBS average</b></div><div class="sp"></div><div class="pts">50.0</div></div>
+          ${whyRows}
+          <div class="why-row total"><div><b>Score</b></div><div class="sp"></div><div class="pts">${t.score.toFixed(1)}</div></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div><h3>Game by Game</h3><p class="sub">The bar shows how often a typical Top-25 team wins that game. A shorter bar means a harder game.</p></div>
+        <div class="scroll"><table class="glog">
+          <thead><tr><th>Wk</th><th>Opponent</th><th></th><th>Result</th><th>Top-25 team wins</th><th class="r">Effect</th><th class="r">Off EPA</th><th class="r">Def EPA</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="8" class="muted">No games yet.</td></tr>`}</tbody>
+        </table></div>
+        <p class="explain">A win adds the square of how hard it was. Beating a team a Top-25 side beats only 40% of the time adds 0.36; a 90% game adds 0.01. A loss costs the square of how winnable it was, so losing a 95% game costs 0.90 and losing a 30% game costs 0.09. Off and Def EPA are that game's raw points added per play, before opponent adjustment. Opponent numbers are their current Computer Poll ranks.</p>
+      </div>
+      ${effBlock}`;
+    $("tp-close").addEventListener("click", () => $("team-dlg").close());
+    const dlg = $("team-dlg");
+    if (!dlg.open) dlg.showModal();
+    $("tp").parentElement.scrollTop = 0;
+    history.replaceState(null, "", "#" + encodeURIComponent(name));
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest(".tlink");
+    if (b) { e.preventDefault(); openTeam(b.dataset.team); }
+  });
+  $("team-dlg").addEventListener("click", e => { if (e.target === $("team-dlg")) $("team-dlg").close(); });
+  $("team-dlg").addEventListener("close", () => history.replaceState(null, "", location.pathname + (cur ? "#week" + cur.week : "")));
   load();
 })();
 </script>
