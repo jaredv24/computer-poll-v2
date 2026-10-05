@@ -1,3 +1,4 @@
 prototype/data/
 prototype/results.json
 __pycache__/
+pipeline/.cache/
