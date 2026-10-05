@@ -175,12 +175,6 @@ footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: 0.92re
 .cl-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); }
 .cl-legend .sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
 .cl-legend .sw.ap { background: var(--pylon); } .cl-legend .sw.cp { background: var(--turf); }
-@media (max-width: 600px) {
-  .cl li { grid-template-columns: 34px minmax(0, 1fr) 46px 58px; }
-  .cl .rec { display: none; }
-  .cl .gbar { grid-column: 2 / 4; grid-row: 2; }
-  .cl .gap { grid-row: 2; grid-column: 4; }
-}
 
 /* Team links + panel */
 .tlink { all: unset; cursor: pointer; font: inherit; color: inherit; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; text-decoration-thickness: 2px; }
@@ -233,6 +227,45 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
 .rlegend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--turf); margin-right: 6px; vertical-align: middle; }
 .rlegend i.ap { border-top: 2px dashed var(--pylon); }
 .explain { font-size: 0.93rem; color: var(--muted); max-width: 680px; }
+
+.wpct { font: 600 0.85rem/1 var(--mono); color: var(--muted); margin-left: 4px; }
+.m-site, .m-only, .m-show-i { display: none; }
+.full th button { white-space: nowrap; }
+@media (max-width: 700px) {
+  .wrap { gap: 44px; padding-block: 28px 56px; }
+  .wbar { height: 14px; }
+  .wbar div { font-size: 0; padding: 0; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .kpi b { font-size: 1.35rem; overflow-wrap: anywhere; }
+  .panel { padding: 16px 14px; }
+  .cl li { grid-template-columns: 28px minmax(0, 1fr) 34px 64px 50px; gap: 6px; padding: 7px 0; font-size: 0.95rem; }
+  .cl .rec { display: none; }
+  .cl .r { font-size: 1.1rem; }
+  .cl .apr small { display: none; }
+  .cl .gap { font-size: 0.74rem; }
+  .full { min-width: 0; font-size: 0.95rem; }
+  .full .m-hide { display: none; }
+  .full td, .full th button { padding-inline: 6px; }
+  .full td.tm { white-space: normal; }
+  .m-only { display: block; }
+  dialog.team { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; border: 0; }
+  .tp { padding: 16px 16px 32px; gap: 22px; }
+  .tp-head { padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px; margin: -16px -16px 0; grid-template-columns: auto minmax(0, 1fr) auto; }
+  .tp-rank { font-size: 2.4rem; }
+  .tp-name { font-size: 1.5rem; overflow-wrap: anywhere; }
+  .glog { min-width: 0; }
+  .glog .c-site, .glog .c-epa, .glog .c-wk { display: none; }
+  .glog td { white-space: normal; }
+  .glog td:nth-child(4), .glog td:nth-child(6) { white-space: nowrap; }
+  .chance .track2 { display: none; }
+  .m-hide-i { display: none; } .m-show-i { display: inline; }
+  .glog .m-site { display: inline; color: var(--muted); font-size: 0.85rem; }
+  .glog td, .glog th { padding: 8px 5px; }
+  .chance { grid-template-columns: 36px; }
+  .effgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .effgrid b { font-size: 1.35rem; }
+}
+@media (max-width: 380px) { .full td, .full th button { padding-inline: 3px; } .full { font-size: 0.88rem; } .full td.rk { font-size: 1rem; } }
 </style>
 </head>
 <body>
@@ -246,10 +279,10 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     <div class="s1">SOR 55%</div><div class="s2">QW 20%</div><div class="s3">LQ 15%</div><div class="s4">EFF 10%</div>
   </div>
   <div class="wlegend">
-    <div><i style="background:var(--seg1)"></i><span><b>Strength of Record</b><br><span class="muted">How unusual is this record for a Top-25 team on this schedule?</span></span></div>
-    <div><i style="background:var(--seg2)"></i><span><b>Quality Wins</b><br><span class="muted">Who did they beat?</span></span></div>
-    <div><i style="background:var(--seg3)"></i><span><b>Loss Quality</b><br><span class="muted">Were the losses forgivable?</span></span></div>
-    <div><i style="background:var(--seg4)"></i><span><b>Efficiency</b><br><span class="muted">How well did they play per snap, adjusted for opponents?</span></span></div>
+    <div><i style="background:var(--seg1)"></i><span><b>Strength of Record</b> <span class="wpct">55%</span><br><span class="muted">How unusual is this record for a Top-25 team on this schedule?</span></span></div>
+    <div><i style="background:var(--seg2)"></i><span><b>Quality Wins</b> <span class="wpct">20%</span><br><span class="muted">Who did they beat?</span></span></div>
+    <div><i style="background:var(--seg3)"></i><span><b>Loss Quality</b> <span class="wpct">15%</span><br><span class="muted">Were the losses forgivable?</span></span></div>
+    <div><i style="background:var(--seg4)"></i><span><b>Efficiency</b> <span class="wpct">10%</span><br><span class="muted">How well did they play per snap, adjusted for opponents?</span></span></div>
   </div>
 </header>
 
@@ -297,23 +330,24 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
         <th class="l" data-k="rank"><button>#</button></th>
         <th data-k="move"><button>Move</button></th>
         <th class="l" data-k="team"><button>Team</button></th>
-        <th class="l" data-k="conf"><button>Conf</button></th>
+        <th class="l m-hide" data-k="conf"><button>Conf</button></th>
         <th data-k="w"><button>W-L</button></th>
         <th data-k="score"><button>Score</button></th>
         <th data-k="ap"><button>AP</button></th>
-        <th data-k="lastRank"><button>Last yr</button></th>
-        <th class="grp" data-k="sor"><button>SOR</button></th>
-        <th data-k="qw"><button>QW</button></th>
-        <th data-k="lq"><button>LQ</button></th>
-        <th class="grp" data-k="eff"><button>Net EPA</button></th>
-        <th data-k="offEPA"><button>Off EPA</button></th>
-        <th data-k="defEPA"><button>Def EPA</button></th>
-        <th data-k="offSR"><button>Off SR</button></th>
-        <th data-k="defSR"><button>Def SR</button></th>
+        <th class="m-hide" data-k="lastRank"><button>Last yr</button></th>
+        <th class="m-hide grp" data-k="sor"><button>SOR</button></th>
+        <th class="m-hide" data-k="qw"><button>QW</button></th>
+        <th class="m-hide" data-k="lq"><button>LQ</button></th>
+        <th class="m-hide grp" data-k="eff"><button>Net EPA</button></th>
+        <th class="m-hide" data-k="offEPA"><button>Off EPA</button></th>
+        <th class="m-hide" data-k="defEPA"><button>Def EPA</button></th>
+        <th class="m-hide" data-k="offSR"><button>Off SR</button></th>
+        <th class="m-hide" data-k="defSR"><button>Def SR</button></th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>
+  <p class="small muted col m-only">Tap a team for its full breakdown. Rotate to landscape or use a wider screen for every column.</p>
   <p class="small muted col">EPA is expected points added per play, adjusted for opponents and home field, with garbage time removed. SR is success rate. Defensive columns show what a defense allows, so lower is better. A rule under #25 marks the Top 25.</p>
 </section>
 
@@ -543,19 +577,19 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
         <td class="rk">${t.rank}</td>
         <td class="n ${t.move > 0 ? "up" : t.move < 0 ? "down" : ""}">${t.move == null ? "–" : t.move > 0 ? "▲" + t.move : t.move < 0 ? "▼" + -t.move : "="}</td>
         <td class="l tm"><button type="button" class="tlink" data-team="${esc(t.team)}">${esc(t.team)}</button></td>
-        <td class="l cf">${esc(t.conf)}</td>
+        <td class="l cf m-hide">${esc(t.conf)}</td>
         <td class="n">${t.w}-${t.l}</td>
         <td class="n">${t.score.toFixed(1)}</td>
         <td>${t.ap == null ? "" : `<span class="ap-badge">${t.ap}</span>`}</td>
-        <td class="n">${t.lastRank ?? "–"}</td>
-        <td class="n grp">${fmt(t.sor, 2, true)}</td>
-        <td class="n">${fmt(t.qw, 2)}</td>
-        <td class="n">${fmt(t.lq, 2)}</td>
-        <td class="n grp">${fmt(t.eff, 3, true)}</td>
-        <td class="n">${fmt(t.offEPA, 3, true)}</td>
-        <td class="n">${fmt(t.defEPA, 3, true)}</td>
-        <td class="n">${pctf(t.offSR)}</td>
-        <td class="n">${pctf(t.defSR)}</td>
+        <td class="n m-hide">${t.lastRank ?? "–"}</td>
+        <td class="n grp m-hide">${fmt(t.sor, 2, true)}</td>
+        <td class="n m-hide">${fmt(t.qw, 2)}</td>
+        <td class="n m-hide">${fmt(t.lq, 2)}</td>
+        <td class="n grp m-hide">${fmt(t.eff, 3, true)}</td>
+        <td class="n m-hide">${fmt(t.offEPA, 3, true)}</td>
+        <td class="n m-hide">${fmt(t.defEPA, 3, true)}</td>
+        <td class="n m-hide">${pctf(t.offSR)}</td>
+        <td class="n m-hide">${pctf(t.defSR)}</td>
       </tr>`).join("");
     document.querySelectorAll("#full th").forEach(th => {
       if (th.dataset.k === sortKey) th.setAttribute("aria-sort", sortDir > 0 ? "ascending" : "descending");
@@ -692,14 +726,14 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     };
     const rows = games.map(g => `
       <tr>
-        <td class="n" style="text-align:left">${g[0]}</td>
-        <td>${g[6] ? `<span class="orank">#${g[6]}</span>` : ""}${g[9] ? oppLabel(g) : `<button type="button" class="tlink" data-team="${esc(g[1])}">${esc(g[1])}</button>`}</td>
-        <td class="muted">${site(g[2])}</td>
+        <td class="n c-wk" style="text-align:left">${g[0]}</td>
+        <td><span class="m-site">${g[2] === -1 ? "at " : g[2] === 0 ? "(N) " : ""}</span>${g[6] ? `<span class="orank">#${g[6]}</span>` : ""}${g[9] ? oppLabel(g) : `<button type="button" class="tlink" data-team="${esc(g[1])}">${esc(g[1])}</button>`}</td>
+        <td class="muted c-site">${site(g[2])}</td>
         <td class="${g[3] > g[4] ? "res-w" : "res-l"}">${g[3] > g[4] ? "W" : "L"} ${g[3]}-${g[4]}</td>
         <td><div class="chance" title="A Top-25 team wins this game ${pc(g[5])} of the time"><div class="track2"><i style="width:${(g[5] * 100).toFixed(0)}%"></i></div><span>${pc(g[5])}</span></div></td>
         <td class="n">${effect(g)}</td>
-        <td class="n">${g[7] == null ? "–" : fmt(g[7], 2, true)}</td>
-        <td class="n">${g[8] == null ? "–" : fmt(g[8], 2, true)}</td>
+        <td class="n c-epa">${g[7] == null ? "–" : fmt(g[7], 2, true)}</td>
+        <td class="n c-epa">${g[8] == null ? "–" : fmt(g[8], 2, true)}</td>
       </tr>`).join("");
 
     const effBlock = t.eff == null ? "" : `
@@ -733,7 +767,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
       <div class="stack">
         <div><h3>Game by Game</h3><p class="sub">The bar shows how often a typical Top-25 team wins that game. A shorter bar means a harder game.</p></div>
         <div class="scroll"><table class="glog">
-          <thead><tr><th>Wk</th><th>Opponent</th><th></th><th>Result</th><th>Top-25 team wins</th><th class="r">Effect</th><th class="r">Off EPA</th><th class="r">Def EPA</th></tr></thead>
+          <thead><tr><th class="c-wk">Wk</th><th>Opponent</th><th class="c-site"></th><th>Result</th><th><span class="m-hide-i">Top-25 team wins</span><span class="m-show-i">Top-25 wins</span></th><th class="r">Effect</th><th class="r c-epa">Off EPA</th><th class="r c-epa">Def EPA</th></tr></thead>
           <tbody>${rows || `<tr><td colspan="8" class="muted">No games yet.</td></tr>`}</tbody>
         </table></div>
         <p class="explain">A win adds the square of how hard it was. Beating a team a Top-25 side beats only 40% of the time adds 0.36; a 90% game adds 0.01. A loss costs the square of how winnable it was, so losing a 95% game costs 0.90 and losing a 30% game costs 0.09. Off and Def EPA are that game's raw points added per play, before opponent adjustment. Opponent numbers are their current Computer Poll ranks.</p>
@@ -757,7 +791,7 @@ dialog.team::backdrop { background: rgba(10, 16, 13, 0.55); }
     const rec = $("opt-rec").checked, mv = $("opt-move").checked, ap = $("opt-ap").checked && DATA.apAvailable;
     const lines = [`*The Computer Poll · Week ${cur.week}, ${DATA.season}*`];
     cur.teams.slice(0, 25).forEach(t => {
-      let line = `${t.rank}. ${t.team}`;
+      let line = `#${t.rank} ${t.team}`;
       if (rec) line += ` (${t.w}-${t.l})`;
       if (mv) {
         const m = t.prev == null ? null : t.prev - t.rank;
